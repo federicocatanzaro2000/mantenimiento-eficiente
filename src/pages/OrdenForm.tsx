@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, Printer } from "lucide-react";
 import { toast } from "sonner";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -109,10 +109,26 @@ export default function OrdenForm() {
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
           <h2 className="text-xl font-semibold">{isEdit ? `Editar Orden #${orden.nroOrden}` : "Nueva Orden"}</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
+          <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           <Button variant="secondary" onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
           <Button onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver</Button>
+        </div>
+      </div>
+
+      <div className="hidden print-show print:block mb-4 avoid-break">
+        <div className="flex items-start justify-between border-b-2 border-black pb-2 mb-2">
+          <div>
+            <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
+            <p className="text-xs">Sistema de gestión industrial</p>
+          </div>
+          <div className="text-right text-xs">
+            <div><b>N°:</b> {orden.nroOrden}</div>
+            <div><b>Fecha:</b> {orden.fechaCreacion}</div>
+            <div><b>Estado:</b> {orden.estado} — <b>Prioridad:</b> {orden.prioridad}</div>
+            <div><b>Aprobado:</b> {orden.aprobado ? "SI" : "NO"}</div>
+          </div>
         </div>
       </div>
 
@@ -264,7 +280,7 @@ export default function OrdenForm() {
           <Field label="Aprobó"><Input value={orden.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></Field>
         </Section>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 no-print">
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           <Button variant="secondary" onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
           <Button onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver al listado</Button>
