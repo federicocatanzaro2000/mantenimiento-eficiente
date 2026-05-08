@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, ArrowLeft, Printer } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/logo-incalfood.png";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -118,10 +119,13 @@ export default function OrdenForm() {
       </div>
 
       <div className="hidden print-show print:block mb-4 avoid-break">
-        <div className="flex items-start justify-between border-b-2 border-black pb-2 mb-2">
-          <div>
-            <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
-            <p className="text-xs">Sistema de gestión industrial</p>
+        <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 gap-4">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="INCALFOOD" className="h-14 w-auto" />
+            <div>
+              <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
+              <p className="text-xs">Sistema de gestión industrial</p>
+            </div>
           </div>
           <div className="text-right text-xs">
             <div><b>N°:</b> {orden.nroOrden}</div>

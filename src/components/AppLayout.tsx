@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2, Wrench } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo-incalfood.png";
 
 const tabs = [
   { to: "/", label: "Listado", icon: ClipboardList, end: true },
@@ -15,7 +16,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="bg-[hsl(var(--header-bg))] text-[hsl(var(--header-fg))] shadow">
         <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center gap-3">
-          <Wrench className="h-6 w-6" />
+          <img src={logo} alt="INCALFOOD" className="h-10 w-auto bg-white rounded p-1" />
           <h1 className="text-lg font-semibold tracking-tight">Órdenes de Mantenimiento</h1>
           <span className="ml-auto text-xs opacity-70 hidden sm:block">Sistema de gestión industrial</span>
         </div>
