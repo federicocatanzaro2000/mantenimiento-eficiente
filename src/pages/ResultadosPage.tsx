@@ -5,7 +5,7 @@ import { useOrdenesStore } from "@/store/ordenesStore";
 import { aplicarFiltros } from "@/lib/filterOrdenes";
 import { Button } from "@/components/ui/button";
 import { AprobadoBadge, CalidadBadge, EstadoBadge, PrioridadBadge } from "@/components/StatusBadges";
-import { ArrowLeft, Download, Eye, Filter as FilterIcon, RotateCcw } from "lucide-react";
+import { ArrowLeft, Download, Eye, Filter as FilterIcon, Printer, RotateCcw } from "lucide-react";
 import { Orden } from "@/types/orden";
 
 const cols: { k: keyof Orden | "acciones"; label: string }[] = [
