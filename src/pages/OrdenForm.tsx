@@ -121,7 +121,7 @@ export default function OrdenForm() {
       <div className="hidden print-show print:block mb-4 avoid-break">
         <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 gap-4">
           <div className="flex items-center gap-3">
-            <img src={(new URL("@/assets/logo-incalfood.png", import.meta.url)).href} alt="INCALFOOD" className="h-14 w-auto" />
+            <img src={logo} alt="INCALFOOD" className="h-14 w-auto" />
             <div>
               <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
               <p className="text-xs">Sistema de gestión industrial</p>
