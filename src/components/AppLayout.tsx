@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2, Wrench } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo-incalfood.png";
 
 const tabs = [
   { to: "/", label: "Listado", icon: ClipboardList, end: true },
