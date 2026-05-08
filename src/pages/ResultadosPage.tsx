@@ -74,9 +74,10 @@ export default function ResultadosPage() {
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-1" />Listado</Button>
           <h2 className="text-xl font-semibold">Resultados filtrados</h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 no-print">
           <Button variant="outline" onClick={() => navigate("/filtros")} className="gap-2"><FilterIcon className="h-4 w-4" />Volver a filtros</Button>
           <Button variant="outline" onClick={() => { resetFiltros(); }} className="gap-2"><RotateCcw className="h-4 w-4" />Limpiar filtros</Button>
+          <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button onClick={() => exportCSV(resultados)} className="gap-2"><Download className="h-4 w-4" />Exportar CSV</Button>
         </div>
       </div>
