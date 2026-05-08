@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, ArrowLeft, Printer } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/logo-incalfood.png";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
