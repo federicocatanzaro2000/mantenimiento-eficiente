@@ -280,7 +280,7 @@ export default function OrdenForm() {
           <Field label="Aprobó"><Input value={orden.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></Field>
         </Section>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 no-print">
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           <Button variant="secondary" onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
           <Button onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver al listado</Button>
