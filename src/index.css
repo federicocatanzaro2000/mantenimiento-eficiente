@@ -100,3 +100,24 @@
   .erp-table tbody tr:hover { background: hsl(var(--accent)); }
   .erp-table tbody td { @apply px-3 py-2 align-middle; }
 }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff !important; }
+  header, nav, .no-print { display: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  .print-area { box-shadow: none !important; }
+  .erp-table { font-size: 11px; }
+  .erp-table thead th { background: #e5e7eb !important; color: #111 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  input, textarea, select, .select-trigger {
+    border: none !important; background: transparent !important; padding: 0 !important;
+    box-shadow: none !important; color: #111 !important; -webkit-appearance: none; appearance: none;
+  }
+  textarea { resize: none !important; }
+  button, [role="button"] { display: none !important; }
+  .print-show { display: block !important; }
+  .bg-card, .bg-secondary { background: #fff !important; }
+  * { color: #111 !important; box-shadow: none !important; }
+  .page-break { page-break-before: always; }
+  tr, td, th, .avoid-break { page-break-inside: avoid; }
+}
