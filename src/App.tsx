@@ -7,6 +7,7 @@ import Listado from "./pages/Listado";
 import OrdenForm from "./pages/OrdenForm";
 import FiltrosPage from "./pages/FiltrosPage";
 import ResultadosPage from "./pages/ResultadosPage";
+import DashboardPage from "./pages/DashboardPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/orden/:id" element={<OrdenForm />} />
           <Route path="/filtros" element={<FiltrosPage />} />
           <Route path="/resultados" element={<ResultadosPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
