@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2 } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-incalfood.png";
 
@@ -8,6 +8,7 @@ const tabs = [
   { to: "/orden/nueva", label: "Nueva Orden", icon: FilePlus },
   { to: "/filtros", label: "Filtros", icon: Filter },
   { to: "/resultados", label: "Resultados", icon: Table2 },
+  { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
