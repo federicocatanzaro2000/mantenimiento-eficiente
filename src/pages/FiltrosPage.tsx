@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
@@ -57,7 +57,8 @@ function MultiCheck<T extends string>({ opciones, valores, onChange }: { opcione
 
 export default function FiltrosPage() {
   const navigate = useNavigate();
-  const { ordenes, filtros, setFiltros, resetFiltros } = useOrdenesStore();
+  const { ordenes, filtros, setFiltros, resetFiltros, loaded, loadAll } = useOrdenesStore();
+  useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
   const [local, setLocal] = useState<Filtros>(filtros);
   const set = <K extends keyof Filtros>(k: K, v: Filtros[K]) => setLocal((p) => ({ ...p, [k]: v }));
   const preview = useMemo(() => aplicarFiltros(ordenes, local).length, [ordenes, local]);
