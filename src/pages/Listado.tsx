@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrdenesStore } from "@/store/ordenesStore";
 import { AppLayout } from "@/components/AppLayout";
@@ -12,15 +12,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Orden } from "@/types/orden";
+import { useAuth } from "@/hooks/useAuth";
+import { canCreateOrden, canDeleteOrden } from "@/lib/permissions";
+import { toast } from "sonner";
 
 type SortKey = keyof Orden | "aprobadoLabel";
 
 export default function Listado() {
-  const { ordenes, deleteOrden } = useOrdenesStore();
+  const { ordenes, loadAll, loaded, loading, deleteOrden } = useOrdenesStore();
+  const { roles } = useAuth();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("nroOrden");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const navigate = useNavigate();
+
+  useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -49,6 +55,15 @@ export default function Listado() {
     else { setSortKey(k); setSortDir("asc"); }
   };
 
+  const onDelete = async (id: string, nro: number | "") => {
+    try {
+      await deleteOrden(id);
+      toast.success(`Orden #${nro} eliminada`);
+    } catch (e: any) {
+      toast.error(e.message || "No se pudo eliminar");
+    }
+  };
+
   const Th = ({ k, children }: { k: SortKey; children: React.ReactNode }) => (
     <th>
       <button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:opacity-80">
@@ -56,6 +71,9 @@ export default function Listado() {
       </button>
     </th>
   );
+
+  const puedeCrear = canCreateOrden(roles);
+  const puedeEliminar = canDeleteOrden(roles);
 
   return (
     <AppLayout>
@@ -70,9 +88,11 @@ export default function Listado() {
               className="pl-9"
             />
           </div>
-          <Button onClick={() => navigate("/orden/nueva")} className="gap-2">
-            <Plus className="h-4 w-4" /> Nueva Orden
-          </Button>
+          {puedeCrear && (
+            <Button onClick={() => navigate("/orden/nueva")} className="gap-2">
+              <Plus className="h-4 w-4" /> Nueva Orden
+            </Button>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -93,7 +113,8 @@ export default function Listado() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 && (
+              {loading && <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>}
+              {!loading && filtered.length === 0 && (
                 <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Sin resultados</td></tr>
               )}
               {filtered.map((o) => (
@@ -116,25 +137,27 @@ export default function Listado() {
                       <Button size="icon" variant="ghost" onClick={() => navigate(`/orden/${o.id}`)} title="Editar">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" title="Eliminar">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Eliminar orden #{o.nroOrden}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción no se puede deshacer. ¿Confirma la eliminación?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteOrden(o.id)}>Eliminar</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      {puedeEliminar && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" title="Eliminar">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminar orden #{o.nroOrden}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. ¿Confirma la eliminación?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => onDelete(o.id, o.nroOrden)}>Eliminar</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </div>
                   </td>
                 </tr>
