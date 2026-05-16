@@ -14,41 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      materiales: {
-        Row: {
-          cantidad: number | null
-          codigo: string | null
-          created_at: string
-          descripcion: string | null
-          id: string
-          orden_id: string
-        }
-        Insert: {
-          cantidad?: number | null
-          codigo?: string | null
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          orden_id: string
-        }
-        Update: {
-          cantidad?: number | null
-          codigo?: string | null
-          created_at?: string
-          descripcion?: string | null
-          id?: string
-          orden_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "materiales_orden_id_fkey"
-            columns: ["orden_id"]
-            isOneToOne: false
-            referencedRelation: "ordenes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ordenes: {
         Row: {
           aprobado: boolean
@@ -70,6 +35,7 @@ export type Database = {
           horas_presupuestadas: number | null
           horas_reales: number | null
           id: string
+          materiales_utilizados: Json
           nombre_equipo: string | null
           nro_orden: number
           observaciones: string | null
@@ -105,6 +71,7 @@ export type Database = {
           horas_presupuestadas?: number | null
           horas_reales?: number | null
           id?: string
+          materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden: number
           observaciones?: string | null
@@ -140,6 +107,7 @@ export type Database = {
           horas_presupuestadas?: number | null
           horas_reales?: number | null
           id?: string
+          materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden?: number
           observaciones?: string | null
