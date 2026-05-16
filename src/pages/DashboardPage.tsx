@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +29,9 @@ const inRange = (date: string, from: string, to: string) => {
 
 export default function DashboardPage() {
   const ordenes = useOrdenesStore((s) => s.ordenes);
+  const loaded = useOrdenesStore((s) => s.loaded);
+  const loadAll = useOrdenesStore((s) => s.loadAll);
+  useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
   const today = new Date().toISOString().slice(0, 10);
   const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);

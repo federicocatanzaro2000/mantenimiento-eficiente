@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Save, ArrowLeft, Printer } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, Printer, Lock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo-incalfood.png";
+import { useAuth } from "@/hooks/useAuth";
+import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -32,13 +34,24 @@ const empty = (nro: number): Orden => ({
   updatedAt: new Date().toISOString().slice(0, 10),
 });
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title, seccion, canEdit, children,
+}: { title: string; seccion: SeccionNro; canEdit: boolean; children: React.ReactNode }) {
   return (
     <div className="bg-card border border-border rounded-md shadow-sm">
-      <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md">
+      <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md flex items-center justify-between">
         <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">{title}</h2>
+        {!canEdit && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" /> Solo lectura</span>
+        )}
       </div>
-      <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{children}</div>
+      <fieldset
+        disabled={!canEdit}
+        aria-disabled={!canEdit}
+        className={`p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${!canEdit ? "opacity-75" : ""}`}
+      >
+        {children}
+      </fieldset>
     </div>
   );
 }
@@ -55,24 +68,41 @@ function Field({ label, children, required }: { label: string; children: React.R
 export default function OrdenForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { ordenes, addOrden, updateOrden, nextNroOrden } = useOrdenesStore();
+  const { ordenes, loaded, loadAll, addOrden, updateOrden, nextNroOrden, nombreDe } = useOrdenesStore();
+  const { roles } = useAuth();
   const isEdit = id && id !== "nueva";
-  const [orden, setOrden] = useState<Orden>(() => {
-    if (isEdit) {
-      const found = ordenes.find((o) => o.id === id);
-      if (found) return { ...found };
-    }
-    return empty(nextNroOrden());
-  });
+  const [orden, setOrden] = useState<Orden | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
   useEffect(() => {
     if (isEdit) {
       const found = ordenes.find((o) => o.id === id);
       if (found) setOrden({ ...found });
+    } else if (loaded && !orden) {
+      setOrden(empty(nextNroOrden()));
     }
-  }, [id]);
+  }, [id, loaded, ordenes]); // eslint-disable-line
 
-  const set = <K extends keyof Orden>(k: K, v: Orden[K]) => setOrden((o) => ({ ...o, [k]: v }));
+  if (!orden) {
+    return <AppLayout><div className="text-center py-10 text-muted-foreground">Cargando...</div></AppLayout>;
+  }
+
+  // Permission flags
+  const can1 = canEditSection(roles, 1);
+  const can2 = canEditSection(roles, 2);
+  const can3 = canEditSection(roles, 3);
+  const can4 = canEditSection(roles, 4);
+  const can5 = canEditSection(roles, 5);
+  const can6 = canEditSection(roles, 6);
+  const puedeGuardar = isEdit ? canEditAny(roles) : canCreateOrden(roles);
+
+  if (!isEdit && !canCreateOrden(roles)) {
+    return <AppLayout><div className="text-center py-10 text-muted-foreground">No tenés permisos para crear órdenes.</div></AppLayout>;
+  }
+
+  const set = <K extends keyof Orden>(k: K, v: Orden[K]) => setOrden((o) => o ? ({ ...o, [k]: v }) : o);
 
   const addMat = () => set("materialesUtilizados", [...orden.materialesUtilizados, { id: uid(), cantidad: "", descripcion: "", codigo: "" }]);
   const updMat = (i: number, patch: Partial<Material>) =>
@@ -90,22 +120,29 @@ export default function OrdenForm() {
     return null;
   };
 
-  const guardar = (volver: boolean) => {
+  const guardar = async (volver: boolean) => {
     const err = validar();
     if (err) { toast.error(err); return; }
-    if (isEdit) {
-      updateOrden(orden.id, orden);
-      toast.success("Orden actualizada");
-    } else {
-      addOrden({ ...orden, createdAt: new Date().toISOString().slice(0, 10), updatedAt: new Date().toISOString().slice(0, 10) });
-      toast.success("Orden creada");
+    setSaving(true);
+    try {
+      if (isEdit) {
+        await updateOrden(orden.id, orden);
+        toast.success("Orden actualizada");
+      } else {
+        await addOrden(orden);
+        toast.success("Orden creada");
+      }
+      if (volver) navigate("/");
+    } catch (e: any) {
+      toast.error(e.message || "Error al guardar");
+    } finally {
+      setSaving(false);
     }
-    if (volver) navigate("/");
   };
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-1" />Volver</Button>
           <h2 className="text-xl font-semibold">{isEdit ? `Editar Orden #${orden.nroOrden}` : "Nueva Orden"}</h2>
@@ -113,10 +150,21 @@ export default function OrdenForm() {
         <div className="flex gap-2 no-print">
           <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
-          <Button variant="secondary" onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
-          <Button onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver</Button>
+          {puedeGuardar && (
+            <>
+              <Button variant="secondary" disabled={saving} onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
+              <Button disabled={saving} onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver</Button>
+            </>
+          )}
         </div>
       </div>
+
+      {isEdit && (
+        <div className="mb-4 text-xs text-muted-foreground bg-muted/40 border border-border rounded px-3 py-2 flex flex-wrap gap-x-6 gap-y-1 avoid-break">
+          <span><b>Creado por:</b> {nombreDe(orden.createdBy)} — {orden.createdAt?.replace("T", " ").slice(0, 16)}</span>
+          <span><b>Última modificación:</b> {nombreDe(orden.updatedBy)} — {orden.updatedAt?.replace("T", " ").slice(0, 16)}</span>
+        </div>
+      )}
 
       <div className="hidden print-show print:block mb-4 avoid-break">
         <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 gap-4">
@@ -132,12 +180,13 @@ export default function OrdenForm() {
             <div><b>Fecha:</b> {orden.fechaCreacion}</div>
             <div><b>Estado:</b> {orden.estado} — <b>Prioridad:</b> {orden.prioridad}</div>
             <div><b>Aprobado:</b> {orden.aprobado ? "SI" : "NO"}</div>
+            {isEdit && <div><b>Creado:</b> {nombreDe(orden.createdBy)} | <b>Mod:</b> {nombreDe(orden.updatedBy)}</div>}
           </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        <Section title="1. Datos principales">
+        <Section title="1. Datos principales" seccion={1} canEdit={can1}>
           <Field label="Nro. de orden" required>
             <Input type="number" value={orden.nroOrden} onChange={(e) => set("nroOrden", e.target.value === "" ? "" : Number(e.target.value))} />
           </Field>
@@ -148,7 +197,7 @@ export default function OrdenForm() {
           <Field label="Técnico responsable"><Input value={orden.tecnicoResponsable} onChange={(e) => set("tecnicoResponsable", e.target.value)} /></Field>
           <Field label="Sector" required><Input value={orden.sector} onChange={(e) => set("sector", e.target.value)} /></Field>
           <Field label="Tipo de orden" required>
-            <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)}>
+            <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {["Preventivo", "Correctivo", "Edilicio", "Limpieza"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
@@ -156,7 +205,7 @@ export default function OrdenForm() {
             </Select>
           </Field>
           <Field label="Estado" required>
-            <Select value={orden.estado || undefined} onValueChange={(v) => set("estado", v as any)}>
+            <Select value={orden.estado || undefined} onValueChange={(v) => set("estado", v as any)} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {["Cumplido", "Pendiente", "En proceso"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
@@ -164,7 +213,7 @@ export default function OrdenForm() {
             </Select>
           </Field>
           <Field label="Prioridad" required>
-            <Select value={orden.prioridad || undefined} onValueChange={(v) => set("prioridad", v as any)}>
+            <Select value={orden.prioridad || undefined} onValueChange={(v) => set("prioridad", v as any)} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {["Alta", "Media", "Baja"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
@@ -173,13 +222,13 @@ export default function OrdenForm() {
           </Field>
           <Field label="Aprobado">
             <div className="flex items-center gap-2 h-10">
-              <Switch checked={orden.aprobado} onCheckedChange={(v) => set("aprobado", v)} />
+              <Switch checked={orden.aprobado} onCheckedChange={(v) => set("aprobado", v)} disabled={!can1} />
               <span className="text-sm text-muted-foreground">{orden.aprobado ? "Aprobado" : "No aprobado"}</span>
             </div>
           </Field>
         </Section>
 
-        <Section title="2. Planificación y ejecución">
+        <Section title="2. Planificación y ejecución" seccion={2} canEdit={can2}>
           <Field label="Fecha de inicio"><Input type="date" value={orden.fechaInicio} onChange={(e) => set("fechaInicio", e.target.value)} /></Field>
           <Field label="Fecha de finalización"><Input type="date" value={orden.fechaFinalizacion} onChange={(e) => set("fechaFinalizacion", e.target.value)} /></Field>
           <Field label="Fecha límite realización"><Input type="date" value={orden.fechaLimiteRealizacion} onChange={(e) => set("fechaLimiteRealizacion", e.target.value)} /></Field>
@@ -203,35 +252,35 @@ export default function OrdenForm() {
           </div>
         </Section>
 
-        <Section title="3. Equipo y documentación">
+        <Section title="3. Equipo y documentación" seccion={3} canEdit={can3}>
           <Field label="Código de documento"><Input value={orden.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></Field>
           <Field label="Código de equipo"><Input value={orden.codigoEquipo} onChange={(e) => set("codigoEquipo", e.target.value)} /></Field>
           <Field label="Nombre de equipo"><Input value={orden.nombreEquipo} onChange={(e) => set("nombreEquipo", e.target.value)} /></Field>
         </Section>
 
-        <Section title="4. Recepción, limpieza y herramientas">
+        <Section title="4. Recepción, limpieza y herramientas" seccion={4} canEdit={can4}>
           <Field label="Estado de recepción del equipo">
             <div className="flex gap-4 h-10 items-center">
               {(["APTO", "NO APTO"] as const).map((opt) => (
                 <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="radio" name="recep" checked={orden.estadoRecepcionEquipo === opt}
-                    onChange={() => set("estadoRecepcionEquipo", opt)} />
+                    onChange={() => set("estadoRecepcionEquipo", opt)} disabled={!can4} />
                   {opt}
                 </label>
               ))}
-              <button type="button" className="text-xs text-muted-foreground underline"
+              <button type="button" className="text-xs text-muted-foreground underline" disabled={!can4}
                 onClick={() => set("estadoRecepcionEquipo", "")}>limpiar</button>
             </div>
           </Field>
           <Field label="Sector limpio y ordenado">
             <div className="flex items-center gap-2 h-10">
-              <Checkbox checked={orden.sectorLimpioOrdenado} onCheckedChange={(v) => set("sectorLimpioOrdenado", !!v)} />
+              <Checkbox checked={orden.sectorLimpioOrdenado} onCheckedChange={(v) => set("sectorLimpioOrdenado", !!v)} disabled={!can4} />
               <span className="text-sm">Sí, dejado limpio y ordenado</span>
             </div>
           </Field>
           <Field label="Herramientas limpias y ordenadas">
             <div className="flex items-center gap-2 h-10">
-              <Checkbox checked={orden.herramientasLimpiasOrdenadas} onCheckedChange={(v) => set("herramientasLimpiasOrdenadas", !!v)} />
+              <Checkbox checked={orden.herramientasLimpiasOrdenadas} onCheckedChange={(v) => set("herramientasLimpiasOrdenadas", !!v)} disabled={!can4} />
               <span className="text-sm">Sí, dejadas limpias y ordenadas</span>
             </div>
           </Field>
@@ -243,9 +292,12 @@ export default function OrdenForm() {
         <div className="bg-card border border-border rounded-md shadow-sm">
           <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md flex items-center justify-between">
             <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">5. Materiales utilizados</h2>
-            <Button size="sm" variant="outline" onClick={addMat} className="gap-1"><Plus className="h-3 w-3" /> Agregar material</Button>
+            <div className="flex items-center gap-2">
+              {!can5 && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" /> Solo lectura</span>}
+              {can5 && <Button size="sm" variant="outline" onClick={addMat} className="gap-1"><Plus className="h-3 w-3" /> Agregar material</Button>}
+            </div>
           </div>
-          <div className="overflow-x-auto">
+          <fieldset disabled={!can5} className={`overflow-x-auto ${!can5 ? "opacity-75" : ""}`}>
             <table className="erp-table">
               <thead>
                 <tr><th className="w-32">Cantidad</th><th>Descripción</th><th className="w-48">Código</th><th className="w-20">Acción</th></tr>
@@ -260,18 +312,18 @@ export default function OrdenForm() {
                       onChange={(e) => updMat(i, { cantidad: e.target.value === "" ? "" : Number(e.target.value) })} /></td>
                     <td><Input value={m.descripcion} onChange={(e) => updMat(i, { descripcion: e.target.value })} /></td>
                     <td><Input value={m.codigo} onChange={(e) => updMat(i, { codigo: e.target.value })} /></td>
-                    <td><Button size="icon" variant="ghost" onClick={() => delMat(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
+                    <td><Button size="icon" variant="ghost" onClick={() => delMat(i)} disabled={!can5}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </fieldset>
         </div>
 
-        <Section title="6. Calidad y aprobaciones">
+        <Section title="6. Calidad y aprobaciones" seccion={6} canEdit={can6}>
           <Field label="Control / Liberación de Calidad">
             <div className="flex items-center gap-2 h-10">
-              <Switch checked={orden.controlLiberacionCalidad} onCheckedChange={(v) => set("controlLiberacionCalidad", v)} />
+              <Switch checked={orden.controlLiberacionCalidad} onCheckedChange={(v) => set("controlLiberacionCalidad", v)} disabled={!can6} />
               <span className="text-sm">{orden.controlLiberacionCalidad ? "SI" : "NO"}</span>
             </div>
           </Field>
@@ -286,8 +338,12 @@ export default function OrdenForm() {
 
         <div className="flex justify-end gap-2 pt-2 no-print">
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
-          <Button variant="secondary" onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
-          <Button onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver al listado</Button>
+          {puedeGuardar && (
+            <>
+              <Button variant="secondary" disabled={saving} onClick={() => guardar(false)} className="gap-2"><Save className="h-4 w-4" />Guardar</Button>
+              <Button disabled={saving} onClick={() => guardar(true)} className="gap-2"><Save className="h-4 w-4" />Guardar y volver al listado</Button>
+            </>
+          )}
         </div>
       </div>
     </AppLayout>

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
@@ -58,7 +58,8 @@ function exportCSV(rows: Orden[]) {
 
 export default function ResultadosPage() {
   const navigate = useNavigate();
-  const { ordenes, filtros, resetFiltros } = useOrdenesStore();
+  const { ordenes, filtros, resetFiltros, loaded, loadAll } = useOrdenesStore();
+  useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
   const resultados = useMemo(() => aplicarFiltros(ordenes, filtros), [ordenes, filtros]);
 
   const totals = useMemo(() => {

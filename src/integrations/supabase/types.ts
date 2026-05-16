@@ -14,16 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ordenes: {
+        Row: {
+          aprobado: boolean
+          aprobo: string | null
+          codigo_documento: string | null
+          codigo_equipo: string | null
+          control_liberacion_calidad: boolean
+          created_at: string
+          created_by: string | null
+          descripcion_problema: string | null
+          elaboro: string | null
+          estado: string | null
+          estado_recepcion_equipo: string | null
+          fecha_creacion: string | null
+          fecha_finalizacion: string | null
+          fecha_inicio: string | null
+          fecha_limite_realizacion: string | null
+          herramientas_limpias_ordenadas: boolean
+          horas_presupuestadas: number | null
+          horas_reales: number | null
+          id: string
+          materiales_utilizados: Json
+          nombre_equipo: string | null
+          nro_orden: number
+          observaciones: string | null
+          prioridad: string | null
+          responsable_control_calidad: string | null
+          reviso: string | null
+          sector: string | null
+          sector_limpio_ordenado: boolean
+          solicitante: string | null
+          tecnico_responsable: string | null
+          tipo_orden: string | null
+          trabajo_solicitado: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          aprobado?: boolean
+          aprobo?: string | null
+          codigo_documento?: string | null
+          codigo_equipo?: string | null
+          control_liberacion_calidad?: boolean
+          created_at?: string
+          created_by?: string | null
+          descripcion_problema?: string | null
+          elaboro?: string | null
+          estado?: string | null
+          estado_recepcion_equipo?: string | null
+          fecha_creacion?: string | null
+          fecha_finalizacion?: string | null
+          fecha_inicio?: string | null
+          fecha_limite_realizacion?: string | null
+          herramientas_limpias_ordenadas?: boolean
+          horas_presupuestadas?: number | null
+          horas_reales?: number | null
+          id?: string
+          materiales_utilizados?: Json
+          nombre_equipo?: string | null
+          nro_orden: number
+          observaciones?: string | null
+          prioridad?: string | null
+          responsable_control_calidad?: string | null
+          reviso?: string | null
+          sector?: string | null
+          sector_limpio_ordenado?: boolean
+          solicitante?: string | null
+          tecnico_responsable?: string | null
+          tipo_orden?: string | null
+          trabajo_solicitado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          aprobado?: boolean
+          aprobo?: string | null
+          codigo_documento?: string | null
+          codigo_equipo?: string | null
+          control_liberacion_calidad?: boolean
+          created_at?: string
+          created_by?: string | null
+          descripcion_problema?: string | null
+          elaboro?: string | null
+          estado?: string | null
+          estado_recepcion_equipo?: string | null
+          fecha_creacion?: string | null
+          fecha_finalizacion?: string | null
+          fecha_inicio?: string | null
+          fecha_limite_realizacion?: string | null
+          herramientas_limpias_ordenadas?: boolean
+          horas_presupuestadas?: number | null
+          horas_reales?: number | null
+          id?: string
+          materiales_utilizados?: Json
+          nombre_equipo?: string | null
+          nro_orden?: number
+          observaciones?: string | null
+          prioridad?: string | null
+          responsable_control_calidad?: string | null
+          reviso?: string | null
+          sector?: string | null
+          sector_limpio_ordenado?: boolean
+          solicitante?: string | null
+          tecnico_responsable?: string | null
+          tipo_orden?: string | null
+          trabajo_solicitado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          activo: boolean
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "supervisor"
+        | "calidad"
+        | "operario"
+        | "panol"
+        | "admin_usuarios"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +322,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "supervisor",
+        "calidad",
+        "operario",
+        "panol",
+        "admin_usuarios",
+      ],
+    },
   },
 } as const
