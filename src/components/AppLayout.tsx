@@ -45,9 +45,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="font-medium">{nombre || user.email}</span> · <span className="opacity-80">{rolesTxt}</span>
           </div>
         )}
-        <div className="hidden">
-          {/* spacer for layout below */}
-        </div>
         <nav className="max-w-[1600px] mx-auto px-2 flex flex-wrap gap-1 border-t border-white/10">
           {tabs.map((t) => {
             const active =
