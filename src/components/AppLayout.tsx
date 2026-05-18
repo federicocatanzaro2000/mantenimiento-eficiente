@@ -28,18 +28,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center gap-3">
           <img src={logo} alt="INCALFOOD" className="h-10 w-auto bg-white rounded p-1" />
           <h1 className="text-lg font-semibold tracking-tight">Órdenes de Mantenimiento</h1>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
             {user && (
               <div className="text-right text-xs leading-tight hidden sm:block">
                 <div className="font-medium">{nombre || user.email}</div>
                 <div className="opacity-70">{rolesTxt}</div>
               </div>
             )}
-            <Button size="sm" variant="ghost" onClick={async () => { await signOut(); navigate("/login"); }} className="text-white hover:bg-white/10 gap-1">
-              <LogOut className="h-4 w-4" /> Salir
+            <Button size="sm" variant="ghost" onClick={async () => { await signOut(); navigate("/login", { replace: true }); }} className="text-white hover:bg-white/10 gap-1 px-2 sm:px-3">
+              <LogOut className="h-4 w-4" /> <span className="hidden xs:inline sm:inline">Salir</span>
             </Button>
           </div>
         </div>
+        {user && (
+          <div className="sm:hidden max-w-[1600px] mx-auto px-4 pb-2 text-xs opacity-90">
+            <span className="font-medium">{nombre || user.email}</span> · <span className="opacity-80">{rolesTxt}</span>
+          </div>
+        )}
         <nav className="max-w-[1600px] mx-auto px-2 flex flex-wrap gap-1 border-t border-white/10">
           {tabs.map((t) => {
             const active =

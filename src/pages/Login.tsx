@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,11 @@ export default function Login() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "Ingresando..." : "Ingresar"}
           </Button>
+          <div className="text-center">
+            <Link to="/forgot-password" className="text-xs text-primary underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
           <p className="text-xs text-muted-foreground text-center">
             Si no tenés usuario, contactá al Administrador.
           </p>
