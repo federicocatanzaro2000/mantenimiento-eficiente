@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Listado from "./pages/Listado";
 import OrdenForm from "./pages/OrdenForm";
 import FiltrosPage from "./pages/FiltrosPage";
@@ -25,6 +27,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<ProtectedRoute><Listado /></ProtectedRoute>} />
             <Route path="/orden/:id" element={<ProtectedRoute><OrdenForm /></ProtectedRoute>} />
             <Route path="/filtros" element={<ProtectedRoute><FiltrosPage /></ProtectedRoute>} />
