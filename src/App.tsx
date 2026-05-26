@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/filtros" element={<ProtectedRoute><FiltrosPage /></ProtectedRoute>} />
             <Route path="/resultados" element={<ProtectedRoute><ResultadosPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/preventivos" element={<ProtectedRoute><Preventivos /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute requireAdmin><AdminUsuarios /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
