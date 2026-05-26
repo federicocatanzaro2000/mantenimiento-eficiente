@@ -120,7 +120,8 @@ export async function parseExcel(file: File): Promise<ParsedImport> {
         }
       }
       if (foundEquipo) {
-        currentEquipo = extractEquipoCodigo(foundEquipo);
+        const e = extractEquipoCodigo(foundEquipo);
+        currentEquipo = { equipo: e.nombre, codigo: e.codigo };
         continue;
       }
 
