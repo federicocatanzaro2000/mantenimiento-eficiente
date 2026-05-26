@@ -14,6 +14,7 @@ import FiltrosPage from "./pages/FiltrosPage";
 import ResultadosPage from "./pages/ResultadosPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminUsuarios from "./pages/AdminUsuarios";
+import Preventivos from "./pages/Preventivos";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
