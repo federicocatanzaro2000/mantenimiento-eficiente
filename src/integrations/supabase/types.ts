@@ -39,6 +39,7 @@ export type Database = {
           nombre_equipo: string | null
           nro_orden: number
           observaciones: string | null
+          preventivo_schedule_id: string | null
           prioridad: string | null
           responsable_control_calidad: string | null
           reviso: string | null
@@ -75,6 +76,7 @@ export type Database = {
           nombre_equipo?: string | null
           nro_orden: number
           observaciones?: string | null
+          preventivo_schedule_id?: string | null
           prioridad?: string | null
           responsable_control_calidad?: string | null
           reviso?: string | null
@@ -111,6 +113,7 @@ export type Database = {
           nombre_equipo?: string | null
           nro_orden?: number
           observaciones?: string | null
+          preventivo_schedule_id?: string | null
           prioridad?: string | null
           responsable_control_calidad?: string | null
           reviso?: string | null
@@ -123,7 +126,236 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "ordenes_preventivo_schedule_id_fkey"
+            columns: ["preventivo_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "preventivos_schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preventivos_alertas: {
+        Row: {
+          alert_date: string
+          alert_type: string
+          created_at: string
+          dismissed_at: string | null
+          estado: string
+          id: string
+          schedule_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          alert_date: string
+          alert_type: string
+          created_at?: string
+          dismissed_at?: string | null
+          estado?: string
+          id?: string
+          schedule_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          alert_date?: string
+          alert_type?: string
+          created_at?: string
+          dismissed_at?: string | null
+          estado?: string
+          id?: string
+          schedule_id?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventivos_alertas_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "preventivos_schedule"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      preventivos_imports: {
+        Row: {
+          anios_detectados: number[] | null
+          errores: Json | null
+          estado: string
+          file_hash: string | null
+          file_name: string
+          hojas_procesadas: string[] | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          planes_actualizados: number | null
+          planes_creados: number | null
+          schedule_actualizados: number | null
+          schedule_creados: number | null
+          schedule_omitidos: number | null
+        }
+        Insert: {
+          anios_detectados?: number[] | null
+          errores?: Json | null
+          estado?: string
+          file_hash?: string | null
+          file_name: string
+          hojas_procesadas?: string[] | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          planes_actualizados?: number | null
+          planes_creados?: number | null
+          schedule_actualizados?: number | null
+          schedule_creados?: number | null
+          schedule_omitidos?: number | null
+        }
+        Update: {
+          anios_detectados?: number[] | null
+          errores?: Json | null
+          estado?: string
+          file_hash?: string | null
+          file_name?: string
+          hojas_procesadas?: string[] | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          planes_actualizados?: number | null
+          planes_creados?: number | null
+          schedule_actualizados?: number | null
+          schedule_creados?: number | null
+          schedule_omitidos?: number | null
+        }
         Relationships: []
+      }
+      preventivos_planes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          created_by: string | null
+          equipo: string
+          equipo_codigo: string | null
+          frecuencia_texto: string | null
+          frecuencia_unidad: string | null
+          frecuencia_valor: number | null
+          id: string
+          source_file: string | null
+          source_row: number | null
+          source_sheet: string | null
+          tarea: string
+          tipo_tarea: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          equipo: string
+          equipo_codigo?: string | null
+          frecuencia_texto?: string | null
+          frecuencia_unidad?: string | null
+          frecuencia_valor?: number | null
+          id?: string
+          source_file?: string | null
+          source_row?: number | null
+          source_sheet?: string | null
+          tarea: string
+          tipo_tarea?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          created_by?: string | null
+          equipo?: string
+          equipo_codigo?: string | null
+          frecuencia_texto?: string | null
+          frecuencia_unidad?: string | null
+          frecuencia_valor?: number | null
+          id?: string
+          source_file?: string | null
+          source_row?: number | null
+          source_sheet?: string | null
+          tarea?: string
+          tipo_tarea?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      preventivos_schedule: {
+        Row: {
+          anio: number
+          created_at: string
+          created_by: string | null
+          dia: number | null
+          estado: string
+          fecha_real: string | null
+          id: string
+          import_notes: string | null
+          mes: number
+          observaciones: string | null
+          orden_id: string | null
+          plan_id: string
+          scheduled_date: string | null
+          source_cell: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          anio: number
+          created_at?: string
+          created_by?: string | null
+          dia?: number | null
+          estado?: string
+          fecha_real?: string | null
+          id?: string
+          import_notes?: string | null
+          mes: number
+          observaciones?: string | null
+          orden_id?: string | null
+          plan_id: string
+          scheduled_date?: string | null
+          source_cell?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          anio?: number
+          created_at?: string
+          created_by?: string | null
+          dia?: number | null
+          estado?: string
+          fecha_real?: string | null
+          id?: string
+          import_notes?: string | null
+          mes?: number
+          observaciones?: string | null
+          orden_id?: string | null
+          plan_id?: string
+          scheduled_date?: string | null
+          source_cell?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventivos_schedule_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventivos_schedule_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "preventivos_planes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
