@@ -33,3 +33,15 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   panol: "Pañol",
   admin_usuarios: "Administrador de Usuarios",
 };
+
+export function canImportPreventivos(roles: AppRole[]): boolean {
+  return roles.includes("supervisor");
+}
+
+export function canManagePreventivos(roles: AppRole[]): boolean {
+  return roles.includes("supervisor");
+}
+
+export function canUpdatePreventivoEstado(roles: AppRole[]): boolean {
+  return roles.includes("supervisor") || roles.includes("operario");
+}
