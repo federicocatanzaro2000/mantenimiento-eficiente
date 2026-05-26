@@ -17,7 +17,7 @@ export async function fetchSchedule(): Promise<PreventivoScheduleConPlan[]> {
 }
 
 export async function updateScheduleEstado(id: string, estado: EstadoPreventivo, fecha_real?: string | null, observaciones?: string | null) {
-  const patch: Record<string, unknown> = { estado };
+  const patch: { estado: EstadoPreventivo; fecha_real?: string | null; observaciones?: string | null } = { estado };
   if (fecha_real !== undefined) patch.fecha_real = fecha_real;
   if (observaciones !== undefined) patch.observaciones = observaciones;
   const { error } = await supabase.from("preventivos_schedule").update(patch).eq("id", id);
