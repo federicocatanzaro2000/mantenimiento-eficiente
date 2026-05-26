@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Users, LogOut } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Users, LogOut, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-incalfood.png";
 import { useAuth } from "@/hooks/useAuth";
