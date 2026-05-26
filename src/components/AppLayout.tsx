@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Users, LogOut } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Users, LogOut, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-incalfood.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { to: "/orden/nueva", label: "Nueva Orden", icon: FilePlus, show: canCreateOrden(roles) },
     { to: "/filtros", label: "Filtros", icon: Filter, show: true },
     { to: "/resultados", label: "Resultados", icon: Table2, show: true },
+    { to: "/preventivos", label: "Preventivos", icon: Wrench, show: true },
     { to: "/dashboard", label: "Dashboard", icon: BarChart3, show: true },
     { to: "/usuarios", label: "Usuarios", icon: Users, show: isAdminUsuarios(roles) },
   ].filter((t) => t.show);

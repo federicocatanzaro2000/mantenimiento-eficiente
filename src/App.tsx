@@ -14,6 +14,7 @@ import FiltrosPage from "./pages/FiltrosPage";
 import ResultadosPage from "./pages/ResultadosPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminUsuarios from "./pages/AdminUsuarios";
+import Preventivos from "./pages/Preventivos";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/filtros" element={<ProtectedRoute><FiltrosPage /></ProtectedRoute>} />
             <Route path="/resultados" element={<ProtectedRoute><ResultadosPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/preventivos" element={<ProtectedRoute><Preventivos /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute requireAdmin><AdminUsuarios /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
