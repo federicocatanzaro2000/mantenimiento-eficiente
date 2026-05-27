@@ -96,6 +96,20 @@ export default function Preventivos() {
   const [ordenesAbiertas, setOrdenesAbiertas] = useState<OrdenLite[]>([]);
   const [openDetalle, setOpenDetalle] = useState<PreventivoScheduleConPlan | null>(null);
 
+  // Nuevo preventivo manual
+  const [openNuevo, setOpenNuevo] = useState(false);
+  const [nuevoModo, setNuevoModo] = useState<"nuevo" | "existente">("nuevo");
+  const [nuevoPlanId, setNuevoPlanId] = useState<string>("");
+  const [nuevoEquipo, setNuevoEquipo] = useState("");
+  const [nuevoCodigo, setNuevoCodigo] = useState("");
+  const [nuevoTarea, setNuevoTarea] = useState("");
+  const [nuevoTipo, setNuevoTipo] = useState<TipoTarea | "">("");
+  const [nuevoFrec, setNuevoFrec] = useState("");
+  const [nuevoFecha, setNuevoFecha] = useState("");
+  const [nuevoObs, setNuevoObs] = useState("");
+  const [nuevoSaving, setNuevoSaving] = useState(false);
+  const [planesList, setPlanesList] = useState<PreventivoPlan[]>([]);
+
   const refresh = async () => {
     setLoading(true);
     try {
