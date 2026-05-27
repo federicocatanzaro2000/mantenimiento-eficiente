@@ -548,6 +548,91 @@ export default function Preventivos() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Nuevo preventivo manual */}
+      <Dialog open={openNuevo} onOpenChange={(o) => !o && setOpenNuevo(false)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Nuevo preventivo</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setNuevoModo("nuevo")} className={`px-3 py-1.5 rounded text-xs font-semibold border ${nuevoModo === "nuevo" ? "bg-primary text-primary-foreground border-transparent" : "bg-background"}`}>Plan nuevo</button>
+              <button type="button" onClick={() => setNuevoModo("existente")} className={`px-3 py-1.5 rounded text-xs font-semibold border ${nuevoModo === "existente" ? "bg-primary text-primary-foreground border-transparent" : "bg-background"}`}>Plan existente</button>
+            </div>
+
+            {nuevoModo === "nuevo" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2"><Label>Equipo *</Label><Input value={nuevoEquipo} onChange={(e) => setNuevoEquipo(e.target.value)} placeholder="Extrusora" /></div>
+                <div><Label>Código equipo</Label><Input value={nuevoCodigo} onChange={(e) => setNuevoCodigo(e.target.value)} placeholder="EX1" /></div>
+                <div>
+                  <Label>Tipo</Label>
+                  <Select value={nuevoTipo} onValueChange={(v) => setNuevoTipo(v as TipoTarea)}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>{TIPOS_TAREA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2"><Label>Tarea *</Label><Input value={nuevoTarea} onChange={(e) => setNuevoTarea(e.target.value)} placeholder="Cambio de aceite hidráulico" /></div>
+                <div className="col-span-2"><Label>Frecuencia (texto)</Label><Input value={nuevoFrec} onChange={(e) => setNuevoFrec(e.target.value)} placeholder="6 meses / 6000 hs" /></div>
+              </div>
+            ) : (
+              <div>
+                <Label>Plan existente *</Label>
+                <Select value={nuevoPlanId} onValueChange={setNuevoPlanId}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger>
+                  <SelectContent>
+                    {planesList.length === 0 && <div className="p-2 text-sm text-muted-foreground">No hay planes. Creá uno nuevo primero.</div>}
+                    {planesList.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.equipo}{p.equipo_codigo ? ` (${p.equipo_codigo})` : ""} — {p.tarea}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Fecha programada *</Label><Input type="date" value={nuevoFecha} onChange={(e) => setNuevoFecha(e.target.value)} /></div>
+            </div>
+            <div><Label>Observaciones</Label><Textarea rows={2} value={nuevoObs} onChange={(e) => setNuevoObs(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenNuevo(false)}>Cancelar</Button>
+            <Button
+              disabled={nuevoSaving || !nuevoFecha || (nuevoModo === "nuevo" ? (!nuevoEquipo.trim() || !nuevoTarea.trim()) : !nuevoPlanId)}
+              onClick={async () => {
+                setNuevoSaving(true);
+                try {
+                  let planId = nuevoPlanId;
+                  if (nuevoModo === "nuevo") {
+                    const freqMatch = nuevoFrec.match(/(\d+)\s*(h|hs|hora|mes|meses)/i);
+                    const plan = await crearPlanManual({
+                      equipo: nuevoEquipo.trim(),
+                      equipo_codigo: nuevoCodigo.trim() || null,
+                      tarea: nuevoTarea.trim(),
+                      tipo_tarea: (nuevoTipo || null) as TipoTarea | null,
+                      frecuencia_texto: nuevoFrec.trim() || null,
+                      frecuencia_valor: freqMatch ? Number(freqMatch[1]) : null,
+                      frecuencia_unidad: freqMatch ? (/^h/i.test(freqMatch[2]) ? "horas" : "meses") : null,
+                      source_file: null,
+                      source_sheet: "manual",
+                      source_row: null,
+                    });
+                    planId = plan.id;
+                  }
+                  await crearScheduleManual({ plan_id: planId, scheduled_date: nuevoFecha, observaciones: nuevoObs });
+                  toast({ title: "Preventivo creado" });
+                  setOpenNuevo(false);
+                  await refresh();
+                } catch (e) {
+                  toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+                } finally {
+                  setNuevoSaving(false);
+                }
+              }}
+            >
+              {nuevoSaving ? "Guardando..." : "Crear preventivo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
