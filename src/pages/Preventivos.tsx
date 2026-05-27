@@ -140,8 +140,22 @@ export default function Preventivos() {
       const q = filtroEquipo.toLowerCase();
       if (!s.plan.equipo.toLowerCase().includes(q) && !s.plan.tarea.toLowerCase().includes(q)) return false;
     }
+    if (quickFilter === "vencidos" && s.bucket !== "vencidos") return false;
+    if (quickFilter === "prox7" && s.bucket !== "prox7" && s.bucket !== "vencidos") return false;
+    if (quickFilter === "prox30" && !["vencidos","prox7","prox30"].includes(s.bucket)) return false;
     return true;
-  }), [derivado, filtroEstado, filtroAnio, filtroMes, filtroTipo, filtroEquipo]);
+  }), [derivado, filtroEstado, filtroAnio, filtroMes, filtroTipo, filtroEquipo, quickFilter]);
+
+  // Agrupar por bucket y ordenar por fecha dentro de cada grupo
+  const BUCKET_ORDER: Bucket[] = ["vencidos", "prox7", "prox30", "futuros", "cerrados"];
+  const agrupado = useMemo(() => {
+    const groups: Record<Bucket, typeof filtrado> = { vencidos: [], prox7: [], prox30: [], futuros: [], cerrados: [] };
+    for (const s of filtrado) groups[s.bucket].push(s);
+    for (const b of BUCKET_ORDER) {
+      groups[b].sort((a, z) => (a.scheduled_date ?? "").localeCompare(z.scheduled_date ?? ""));
+    }
+    return groups;
+  }, [filtrado]);
 
   const indicadores = useMemo(() => {
     const prox7 = derivado.filter((s) => s.estadoVisible !== "Completado" && s.estadoVisible !== "Cancelado" && s.diasRestantes !== null && s.diasRestantes >= 0 && s.diasRestantes <= 7).length;
