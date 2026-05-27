@@ -369,7 +369,7 @@ export default function Preventivos() {
                       const info = bk !== "__flat__" ? BUCKET_INFO[bk] : null;
                       const Icon = info?.icon;
                       return (
-                        <>
+                        <Fragment key={bk}>
                           {info && (
                             <tr key={`h-${bk}`}>
                               <td colSpan={9} className="p-0">
