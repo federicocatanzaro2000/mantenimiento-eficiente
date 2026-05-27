@@ -420,7 +420,7 @@ export default function Preventivos() {
                               </tr>
                             );
                           })}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>
