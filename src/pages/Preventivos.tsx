@@ -13,14 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { canImportPreventivos, canManagePreventivos, canUpdatePreventivoEstado } from "@/lib/permissions";
 import { toast } from "@/hooks/use-toast";
-import { EstadoPreventivo, ESTADO_COLOR, PreventivoScheduleConPlan, computeStatusBy } from "@/lib/preventivos/types";
+import { EstadoPreventivo, ESTADO_COLOR, PreventivoScheduleConPlan, PreventivoPlan, TIPOS_TAREA, TipoTarea, computeStatusBy } from "@/lib/preventivos/types";
 import {
-  fetchSchedule, updateScheduleEstado, reprogramarSchedule, eliminarSchedule,
-  importarParseado, crearOrdenDesdePreventivo, vincularOrden,
+  fetchSchedule, fetchPlanes, updateScheduleEstado, reprogramarSchedule, eliminarSchedule,
+  importarParseado, crearOrdenDesdePreventivo, vincularOrden, crearPlanManual, crearScheduleManual,
 } from "@/lib/preventivos/api";
 import { parseExcel } from "@/lib/preventivos/parser";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock } from "lucide-react";
+import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock, Plus } from "lucide-react";
 
 type Bucket = "vencidos" | "prox7" | "prox30" | "futuros" | "cerrados";
 type QuickFilter = "operativo" | "vencidos" | "prox7" | "prox30" | "todos";
