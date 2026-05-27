@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,39 @@ import {
 } from "@/lib/preventivos/api";
 import { parseExcel } from "@/lib/preventivos/parser";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2 } from "lucide-react";
+import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock } from "lucide-react";
+
+type Bucket = "vencidos" | "prox7" | "prox30" | "futuros" | "cerrados";
+type QuickFilter = "operativo" | "vencidos" | "prox7" | "prox30" | "todos";
+
+function bucketOf(estado: EstadoPreventivo, diasRestantes: number | null): Bucket {
+  if (estado === "Completado" || estado === "Cancelado") return "cerrados";
+  if (estado === "Vencido") return "vencidos";
+  if (diasRestantes === null) return "futuros";
+  if (diasRestantes < 0) return "vencidos";
+  if (diasRestantes <= 7) return "prox7";
+  if (diasRestantes <= 30) return "prox30";
+  return "futuros";
+}
+
+function DiasBadge({ dias, estado }: { dias: number | null; estado: EstadoPreventivo }) {
+  if (estado === "Completado") return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white"><CheckCircle2 className="h-3 w-3" />OK</span>;
+  if (estado === "Cancelado") return <span className="text-xs text-muted-foreground">—</span>;
+  if (dias === null) return <span className="text-xs text-muted-foreground">s/fecha</span>;
+  if (dias < 0) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"><AlertTriangle className="h-3 w-3" />{Math.abs(dias)}d vencido</span>;
+  if (dias === 0) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white">HOY</span>;
+  if (dias <= 7) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-500 text-white">{dias}d</span>;
+  if (dias <= 30) return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">{dias}d</span>;
+  return <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">{dias}d</span>;
+}
+
+const BUCKET_INFO: Record<Bucket, { label: string; icon: typeof AlertTriangle; cls: string; rowCls: string }> = {
+  vencidos: { label: "VENCIDOS", icon: AlertTriangle, cls: "bg-red-600 text-white", rowCls: "border-l-4 border-red-600 bg-red-50/50" },
+  prox7:    { label: "PRÓXIMOS 7 DÍAS", icon: Clock, cls: "bg-amber-500 text-white", rowCls: "border-l-4 border-amber-500 bg-amber-50/40" },
+  prox30:   { label: "PRÓXIMOS 30 DÍAS", icon: CalendarClock, cls: "bg-blue-500 text-white", rowCls: "border-l-4 border-blue-300" },
+  futuros:  { label: "FUTUROS", icon: CalendarDays, cls: "bg-slate-500 text-white", rowCls: "" },
+  cerrados: { label: "COMPLETADOS / CANCELADOS", icon: CheckCircle2, cls: "bg-emerald-600 text-white", rowCls: "opacity-60" },
+};
 
 const MES_NOMBRES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const ESTADOS: EstadoPreventivo[] = ["Programado","Próximo","OT creada","En proceso","Completado","Vencido","Reprogramado","Cancelado","Requiere revisión"];
@@ -52,6 +84,7 @@ export default function Preventivos() {
   const [filtroAnio, setFiltroAnio] = useState<string>("__all");
   const [filtroTipo, setFiltroTipo] = useState<string>("__all");
   const [filtroMes, setFiltroMes] = useState<string>("__all");
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("operativo");
 
   // dialogs
   const [openReprog, setOpenReprog] = useState<PreventivoScheduleConPlan | null>(null);
@@ -77,11 +110,11 @@ export default function Preventivos() {
 
   useEffect(() => { refresh(); }, []);
 
-  const derivado = useMemo(() => schedule.map((s) => ({
-    ...s,
-    estadoVisible: computeStatusBy(s.scheduled_date, s.estado, today) as EstadoPreventivo,
-    diasRestantes: s.scheduled_date ? daysBetween(today, s.scheduled_date) : null,
-  })), [schedule, today]);
+  const derivado = useMemo(() => schedule.map((s) => {
+    const estadoVisible = computeStatusBy(s.scheduled_date, s.estado, today) as EstadoPreventivo;
+    const diasRestantes = s.scheduled_date ? daysBetween(today, s.scheduled_date) : null;
+    return { ...s, estadoVisible, diasRestantes, bucket: bucketOf(estadoVisible, diasRestantes) };
+  }), [schedule, today]);
 
   const aniosDisponibles = useMemo(() => {
     const set = new Set(schedule.map((s) => s.anio));
@@ -107,8 +140,22 @@ export default function Preventivos() {
       const q = filtroEquipo.toLowerCase();
       if (!s.plan.equipo.toLowerCase().includes(q) && !s.plan.tarea.toLowerCase().includes(q)) return false;
     }
+    if (quickFilter === "vencidos" && s.bucket !== "vencidos") return false;
+    if (quickFilter === "prox7" && s.bucket !== "prox7" && s.bucket !== "vencidos") return false;
+    if (quickFilter === "prox30" && !["vencidos","prox7","prox30"].includes(s.bucket)) return false;
     return true;
-  }), [derivado, filtroEstado, filtroAnio, filtroMes, filtroTipo, filtroEquipo]);
+  }), [derivado, filtroEstado, filtroAnio, filtroMes, filtroTipo, filtroEquipo, quickFilter]);
+
+  // Agrupar por bucket y ordenar por fecha dentro de cada grupo
+  const BUCKET_ORDER: Bucket[] = ["vencidos", "prox7", "prox30", "futuros", "cerrados"];
+  const agrupado = useMemo(() => {
+    const groups: Record<Bucket, typeof filtrado> = { vencidos: [], prox7: [], prox30: [], futuros: [], cerrados: [] };
+    for (const s of filtrado) groups[s.bucket].push(s);
+    for (const b of BUCKET_ORDER) {
+      groups[b].sort((a, z) => (a.scheduled_date ?? "").localeCompare(z.scheduled_date ?? ""));
+    }
+    return groups;
+  }, [filtrado]);
 
   const indicadores = useMemo(() => {
     const prox7 = derivado.filter((s) => s.estadoVisible !== "Completado" && s.estadoVisible !== "Cancelado" && s.diasRestantes !== null && s.diasRestantes >= 0 && s.diasRestantes <= 7).length;
@@ -277,66 +324,111 @@ export default function Preventivos() {
 
           {/* TABLA */}
           <TabsContent value="tabla">
+            {/* Quick filters chips */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {([
+                { k: "operativo" as QuickFilter, label: "Vista operativa", cls: "bg-foreground text-background" },
+                { k: "vencidos" as QuickFilter, label: `Vencidos (${indicadores.vencidos})`, cls: "bg-red-600 text-white" },
+                { k: "prox7" as QuickFilter, label: `Próx. 7 días (${indicadores.prox7})`, cls: "bg-amber-500 text-white" },
+                { k: "prox30" as QuickFilter, label: `Próx. 30 días (${indicadores.prox30})`, cls: "bg-blue-500 text-white" },
+                { k: "todos" as QuickFilter, label: "Todos", cls: "bg-slate-500 text-white" },
+              ]).map((f) => (
+                <button
+                  key={f.k}
+                  onClick={() => setQuickFilter(f.k)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${quickFilter === f.k ? f.cls + " border-transparent shadow" : "bg-background text-foreground border-border hover:bg-muted"}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Fecha</th>
-                      <th className="text-right p-2 w-20">Días</th>
+                      <th className="text-left p-2 w-28">Fecha</th>
+                      <th className="text-left p-2 w-32">Días</th>
                       <th className="text-left p-2">Equipo</th>
                       <th className="text-left p-2">Tarea</th>
-                      <th className="text-left p-2">Tipo</th>
-                      <th className="text-left p-2">Frec.</th>
+                      <th className="text-left p-2 hidden md:table-cell">Tipo</th>
+                      <th className="text-left p-2 hidden lg:table-cell">Frec.</th>
                       <th className="text-left p-2">Estado</th>
-                      <th className="text-left p-2">OT</th>
-                      <th className="text-right p-2 w-44">Acciones</th>
+                      <th className="text-left p-2 w-20">OT</th>
+                      <th className="text-right p-2 w-56">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtrado.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos. Importá el Excel desde la pestaña "Importar".</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos en esta vista. Probá otro filtro o importá el Excel.</td></tr>
                     )}
-                    {filtrado.map((s, i) => (
-                      <tr key={s.id} className={i % 2 ? "bg-muted/30" : ""}>
-                        <td className="p-2 whitespace-nowrap">{s.scheduled_date ?? `${s.anio}-${String(s.mes).padStart(2,"0")}`}</td>
-                        <td className="p-2 text-right">{s.diasRestantes ?? "—"}</td>
-                        <td className="p-2">{s.plan.equipo}{s.plan.equipo_codigo ? ` (${s.plan.equipo_codigo})` : ""}</td>
-                        <td className="p-2">{s.plan.tarea}</td>
-                        <td className="p-2">{s.plan.tipo_tarea ?? "—"}</td>
-                        <td className="p-2 text-xs">{s.plan.frecuencia_texto ?? "—"}</td>
-                        <td className="p-2"><Badge className={ESTADO_COLOR[s.estadoVisible]} variant="secondary">{s.estadoVisible}</Badge></td>
-                        <td className="p-2">{s.orden_id ? <button className="text-primary underline text-xs" onClick={() => navigate(`/orden/${s.orden_id}`)}>Ver OT</button> : "—"}</td>
-                        <td className="p-2 text-right">
-                          <div className="inline-flex gap-1 flex-wrap justify-end">
-                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpenDetalle(s)}><Eye className="h-3.5 w-3.5" /></Button>
-                            {canManagePreventivos(roles) && !s.orden_id && s.estadoVisible !== "Completado" && (
-                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => handleCrearOT(s)}><FilePlus className="h-3.5 w-3.5" /> OT</Button>
-                            )}
-                            {canManagePreventivos(roles) && !s.orden_id && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => abrirVincular(s)}><Link2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setOpenReprog(s); setReprogFecha(s.scheduled_date ?? today); }}><CalendarDays className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canUpdatePreventivoEstado(roles) && s.estadoVisible !== "Completado" && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" onClick={() => { setOpenComplete(s); setCompleteObs(s.observaciones ?? ""); }}><CheckCircle2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && s.estadoVisible !== "Cancelado" && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-zinc-600" onClick={() => handleCancelar(s)}><XCircle className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => handleEliminar(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(quickFilter === "operativo" ? BUCKET_ORDER : ["__flat__" as const]).map((bk) => {
+                      const items = bk === "__flat__" ? filtrado : agrupado[bk];
+                      if (bk !== "__flat__" && items.length === 0) return null;
+                      const info = bk !== "__flat__" ? BUCKET_INFO[bk] : null;
+                      const Icon = info?.icon;
+                      return (
+                        <Fragment key={bk}>
+                          {info && (
+                            <tr key={`h-${bk}`}>
+                              <td colSpan={9} className="p-0">
+                                <div className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold tracking-wide ${info.cls}`}>
+                                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                                  {info.label} <span className="opacity-80 font-normal">· {items.length}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {items.map((s) => {
+                            const rowCls = quickFilter === "operativo" ? BUCKET_INFO[s.bucket].rowCls : "";
+                            return (
+                              <tr key={s.id} className={`border-b hover:bg-muted/40 ${rowCls}`}>
+                                <td className="p-2 whitespace-nowrap font-mono text-xs">{s.scheduled_date ?? `${s.anio}-${String(s.mes).padStart(2,"0")}`}</td>
+                                <td className="p-2"><DiasBadge dias={s.diasRestantes} estado={s.estadoVisible} /></td>
+                                <td className="p-2 font-medium">{s.plan.equipo}{s.plan.equipo_codigo ? <span className="text-muted-foreground"> ({s.plan.equipo_codigo})</span> : ""}</td>
+                                <td className="p-2">{s.plan.tarea}</td>
+                                <td className="p-2 hidden md:table-cell text-xs">{s.plan.tipo_tarea ?? "—"}</td>
+                                <td className="p-2 hidden lg:table-cell text-xs">{s.plan.frecuencia_texto ?? "—"}</td>
+                                <td className="p-2"><Badge className={ESTADO_COLOR[s.estadoVisible]} variant="secondary">{s.estadoVisible}</Badge></td>
+                                <td className="p-2">{s.orden_id ? <button className="text-primary underline text-xs" onClick={() => navigate(`/orden/${s.orden_id}`)}>Ver</button> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                                <td className="p-2 text-right">
+                                  <div className="inline-flex gap-1 flex-wrap justify-end items-center">
+                                    {canManagePreventivos(roles) && !s.orden_id && s.estadoVisible !== "Completado" && s.estadoVisible !== "Cancelado" && (
+                                      <Button size="sm" className="h-7 px-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" onClick={() => handleCrearOT(s)}>
+                                        <FilePlus className="h-3.5 w-3.5" /> Crear OIT
+                                      </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="h-7 px-2" title="Detalle" onClick={() => setOpenDetalle(s)}><Eye className="h-3.5 w-3.5" /></Button>
+                                    {canManagePreventivos(roles) && !s.orden_id && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2" title="Vincular a OT" onClick={() => abrirVincular(s)}><Link2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2" title="Reprogramar" onClick={() => { setOpenReprog(s); setReprogFecha(s.scheduled_date ?? today); }}><CalendarDays className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canUpdatePreventivoEstado(roles) && s.estadoVisible !== "Completado" && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Marcar completado" onClick={() => { setOpenComplete(s); setCompleteObs(s.observaciones ?? ""); }}><CheckCircle2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && s.estadoVisible !== "Cancelado" && s.estadoVisible !== "Completado" && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-zinc-600" title="Cancelar" onClick={() => handleCancelar(s)}><XCircle className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" title="Eliminar" onClick={() => handleEliminar(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* CRONOGRAMA */}
           <TabsContent value="cronograma">

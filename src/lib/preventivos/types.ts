@@ -93,14 +93,14 @@ export interface ParsedImport {
 
 export const ESTADO_COLOR: Record<EstadoPreventivo, string> = {
   "Programado": "bg-slate-200 text-slate-800",
-  "Próximo": "bg-amber-200 text-amber-900",
-  "OT creada": "bg-blue-200 text-blue-900",
-  "En proceso": "bg-indigo-200 text-indigo-900",
-  "Completado": "bg-emerald-200 text-emerald-900",
-  "Vencido": "bg-red-200 text-red-900",
-  "Reprogramado": "bg-purple-200 text-purple-900",
-  "Cancelado": "bg-zinc-200 text-zinc-700",
-  "Requiere revisión": "bg-orange-200 text-orange-900",
+  "Próximo": "bg-amber-500 text-white font-semibold",
+  "OT creada": "bg-blue-500 text-white",
+  "En proceso": "bg-indigo-500 text-white",
+  "Completado": "bg-emerald-600 text-white font-semibold",
+  "Vencido": "bg-red-600 text-white font-bold",
+  "Reprogramado": "bg-purple-500 text-white",
+  "Cancelado": "bg-zinc-400 text-white",
+  "Requiere revisión": "bg-orange-500 text-white",
 };
 
 export function planKeyOf(p: Pick<ParsedPlan, "equipo" | "equipo_codigo" | "tarea" | "source_sheet" | "frecuencia_texto">) {
