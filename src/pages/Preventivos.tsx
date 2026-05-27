@@ -274,8 +274,19 @@ export default function Preventivos() {
             <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refrescar
             </Button>
+            {canManagePreventivos(roles) && (
+              <Button size="sm" onClick={async () => {
+                setOpenNuevo(true);
+                setNuevoModo("nuevo");
+                setNuevoEquipo(""); setNuevoCodigo(""); setNuevoTarea(""); setNuevoTipo(""); setNuevoFrec("");
+                setNuevoFecha(today); setNuevoObs(""); setNuevoPlanId("");
+                try { setPlanesList(await fetchPlanes()); } catch {}
+              }}>
+                <Plus className="h-4 w-4" /> Nuevo preventivo
+              </Button>
+            )}
             {canImportPreventivos(roles) && (
-              <Button size="sm" onClick={() => setTab("importar")}>
+              <Button size="sm" variant="outline" onClick={() => setTab("importar")}>
                 <Upload className="h-4 w-4" /> Importar Excel
               </Button>
             )}
