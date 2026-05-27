@@ -84,6 +84,7 @@ export default function Preventivos() {
   const [filtroAnio, setFiltroAnio] = useState<string>("__all");
   const [filtroTipo, setFiltroTipo] = useState<string>("__all");
   const [filtroMes, setFiltroMes] = useState<string>("__all");
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("operativo");
 
   // dialogs
   const [openReprog, setOpenReprog] = useState<PreventivoScheduleConPlan | null>(null);
