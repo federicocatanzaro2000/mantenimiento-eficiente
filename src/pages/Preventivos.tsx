@@ -324,66 +324,111 @@ export default function Preventivos() {
 
           {/* TABLA */}
           <TabsContent value="tabla">
+            {/* Quick filters chips */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {([
+                { k: "operativo" as QuickFilter, label: "Vista operativa", cls: "bg-foreground text-background" },
+                { k: "vencidos" as QuickFilter, label: `Vencidos (${indicadores.vencidos})`, cls: "bg-red-600 text-white" },
+                { k: "prox7" as QuickFilter, label: `Próx. 7 días (${indicadores.prox7})`, cls: "bg-amber-500 text-white" },
+                { k: "prox30" as QuickFilter, label: `Próx. 30 días (${indicadores.prox30})`, cls: "bg-blue-500 text-white" },
+                { k: "todos" as QuickFilter, label: "Todos", cls: "bg-slate-500 text-white" },
+              ]).map((f) => (
+                <button
+                  key={f.k}
+                  onClick={() => setQuickFilter(f.k)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${quickFilter === f.k ? f.cls + " border-transparent shadow" : "bg-background text-foreground border-border hover:bg-muted"}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
             <Card>
               <CardContent className="p-0 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Fecha</th>
-                      <th className="text-right p-2 w-20">Días</th>
+                      <th className="text-left p-2 w-28">Fecha</th>
+                      <th className="text-left p-2 w-32">Días</th>
                       <th className="text-left p-2">Equipo</th>
                       <th className="text-left p-2">Tarea</th>
-                      <th className="text-left p-2">Tipo</th>
-                      <th className="text-left p-2">Frec.</th>
+                      <th className="text-left p-2 hidden md:table-cell">Tipo</th>
+                      <th className="text-left p-2 hidden lg:table-cell">Frec.</th>
                       <th className="text-left p-2">Estado</th>
-                      <th className="text-left p-2">OT</th>
-                      <th className="text-right p-2 w-44">Acciones</th>
+                      <th className="text-left p-2 w-20">OT</th>
+                      <th className="text-right p-2 w-56">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtrado.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos. Importá el Excel desde la pestaña "Importar".</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos en esta vista. Probá otro filtro o importá el Excel.</td></tr>
                     )}
-                    {filtrado.map((s, i) => (
-                      <tr key={s.id} className={i % 2 ? "bg-muted/30" : ""}>
-                        <td className="p-2 whitespace-nowrap">{s.scheduled_date ?? `${s.anio}-${String(s.mes).padStart(2,"0")}`}</td>
-                        <td className="p-2 text-right">{s.diasRestantes ?? "—"}</td>
-                        <td className="p-2">{s.plan.equipo}{s.plan.equipo_codigo ? ` (${s.plan.equipo_codigo})` : ""}</td>
-                        <td className="p-2">{s.plan.tarea}</td>
-                        <td className="p-2">{s.plan.tipo_tarea ?? "—"}</td>
-                        <td className="p-2 text-xs">{s.plan.frecuencia_texto ?? "—"}</td>
-                        <td className="p-2"><Badge className={ESTADO_COLOR[s.estadoVisible]} variant="secondary">{s.estadoVisible}</Badge></td>
-                        <td className="p-2">{s.orden_id ? <button className="text-primary underline text-xs" onClick={() => navigate(`/orden/${s.orden_id}`)}>Ver OT</button> : "—"}</td>
-                        <td className="p-2 text-right">
-                          <div className="inline-flex gap-1 flex-wrap justify-end">
-                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setOpenDetalle(s)}><Eye className="h-3.5 w-3.5" /></Button>
-                            {canManagePreventivos(roles) && !s.orden_id && s.estadoVisible !== "Completado" && (
-                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => handleCrearOT(s)}><FilePlus className="h-3.5 w-3.5" /> OT</Button>
-                            )}
-                            {canManagePreventivos(roles) && !s.orden_id && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => abrirVincular(s)}><Link2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => { setOpenReprog(s); setReprogFecha(s.scheduled_date ?? today); }}><CalendarDays className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canUpdatePreventivoEstado(roles) && s.estadoVisible !== "Completado" && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" onClick={() => { setOpenComplete(s); setCompleteObs(s.observaciones ?? ""); }}><CheckCircle2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && s.estadoVisible !== "Cancelado" && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-zinc-600" onClick={() => handleCancelar(s)}><XCircle className="h-3.5 w-3.5" /></Button>
-                            )}
-                            {canManagePreventivos(roles) && (
-                              <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" onClick={() => handleEliminar(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(quickFilter === "operativo" ? BUCKET_ORDER : ["__flat__" as const]).map((bk) => {
+                      const items = bk === "__flat__" ? filtrado : agrupado[bk];
+                      if (bk !== "__flat__" && items.length === 0) return null;
+                      const info = bk !== "__flat__" ? BUCKET_INFO[bk] : null;
+                      const Icon = info?.icon;
+                      return (
+                        <>
+                          {info && (
+                            <tr key={`h-${bk}`}>
+                              <td colSpan={9} className="p-0">
+                                <div className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold tracking-wide ${info.cls}`}>
+                                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                                  {info.label} <span className="opacity-80 font-normal">· {items.length}</span>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {items.map((s) => {
+                            const rowCls = quickFilter === "operativo" ? BUCKET_INFO[s.bucket].rowCls : "";
+                            return (
+                              <tr key={s.id} className={`border-b hover:bg-muted/40 ${rowCls}`}>
+                                <td className="p-2 whitespace-nowrap font-mono text-xs">{s.scheduled_date ?? `${s.anio}-${String(s.mes).padStart(2,"0")}`}</td>
+                                <td className="p-2"><DiasBadge dias={s.diasRestantes} estado={s.estadoVisible} /></td>
+                                <td className="p-2 font-medium">{s.plan.equipo}{s.plan.equipo_codigo ? <span className="text-muted-foreground"> ({s.plan.equipo_codigo})</span> : ""}</td>
+                                <td className="p-2">{s.plan.tarea}</td>
+                                <td className="p-2 hidden md:table-cell text-xs">{s.plan.tipo_tarea ?? "—"}</td>
+                                <td className="p-2 hidden lg:table-cell text-xs">{s.plan.frecuencia_texto ?? "—"}</td>
+                                <td className="p-2"><Badge className={ESTADO_COLOR[s.estadoVisible]} variant="secondary">{s.estadoVisible}</Badge></td>
+                                <td className="p-2">{s.orden_id ? <button className="text-primary underline text-xs" onClick={() => navigate(`/orden/${s.orden_id}`)}>Ver</button> : <span className="text-xs text-muted-foreground">—</span>}</td>
+                                <td className="p-2 text-right">
+                                  <div className="inline-flex gap-1 flex-wrap justify-end items-center">
+                                    {canManagePreventivos(roles) && !s.orden_id && s.estadoVisible !== "Completado" && s.estadoVisible !== "Cancelado" && (
+                                      <Button size="sm" className="h-7 px-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 font-semibold" onClick={() => handleCrearOT(s)}>
+                                        <FilePlus className="h-3.5 w-3.5" /> Crear OIT
+                                      </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="h-7 px-2" title="Detalle" onClick={() => setOpenDetalle(s)}><Eye className="h-3.5 w-3.5" /></Button>
+                                    {canManagePreventivos(roles) && !s.orden_id && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2" title="Vincular a OT" onClick={() => abrirVincular(s)}><Link2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2" title="Reprogramar" onClick={() => { setOpenReprog(s); setReprogFecha(s.scheduled_date ?? today); }}><CalendarDays className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canUpdatePreventivoEstado(roles) && s.estadoVisible !== "Completado" && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-emerald-700" title="Marcar completado" onClick={() => { setOpenComplete(s); setCompleteObs(s.observaciones ?? ""); }}><CheckCircle2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && s.estadoVisible !== "Cancelado" && s.estadoVisible !== "Completado" && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-zinc-600" title="Cancelar" onClick={() => handleCancelar(s)}><XCircle className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                    {canManagePreventivos(roles) && (
+                                      <Button size="sm" variant="ghost" className="h-7 px-2 text-destructive" title="Eliminar" onClick={() => handleEliminar(s)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </>
+                      );
+                    })}
                   </tbody>
                 </table>
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* CRONOGRAMA */}
           <TabsContent value="cronograma">
