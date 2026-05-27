@@ -20,7 +20,39 @@ import {
 } from "@/lib/preventivos/api";
 import { parseExcel } from "@/lib/preventivos/parser";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2 } from "lucide-react";
+import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock } from "lucide-react";
+
+type Bucket = "vencidos" | "prox7" | "prox30" | "futuros" | "cerrados";
+type QuickFilter = "operativo" | "vencidos" | "prox7" | "prox30" | "todos";
+
+function bucketOf(estado: EstadoPreventivo, diasRestantes: number | null): Bucket {
+  if (estado === "Completado" || estado === "Cancelado") return "cerrados";
+  if (estado === "Vencido") return "vencidos";
+  if (diasRestantes === null) return "futuros";
+  if (diasRestantes < 0) return "vencidos";
+  if (diasRestantes <= 7) return "prox7";
+  if (diasRestantes <= 30) return "prox30";
+  return "futuros";
+}
+
+function DiasBadge({ dias, estado }: { dias: number | null; estado: EstadoPreventivo }) {
+  if (estado === "Completado") return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-600 text-white"><CheckCircle2 className="h-3 w-3" />OK</span>;
+  if (estado === "Cancelado") return <span className="text-xs text-muted-foreground">—</span>;
+  if (dias === null) return <span className="text-xs text-muted-foreground">s/fecha</span>;
+  if (dias < 0) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white"><AlertTriangle className="h-3 w-3" />{Math.abs(dias)}d vencido</span>;
+  if (dias === 0) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white">HOY</span>;
+  if (dias <= 7) return <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-500 text-white">{dias}d</span>;
+  if (dias <= 30) return <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">{dias}d</span>;
+  return <span className="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">{dias}d</span>;
+}
+
+const BUCKET_INFO: Record<Bucket, { label: string; icon: typeof AlertTriangle; cls: string; rowCls: string }> = {
+  vencidos: { label: "VENCIDOS", icon: AlertTriangle, cls: "bg-red-600 text-white", rowCls: "border-l-4 border-red-600 bg-red-50/50" },
+  prox7:    { label: "PRÓXIMOS 7 DÍAS", icon: Clock, cls: "bg-amber-500 text-white", rowCls: "border-l-4 border-amber-500 bg-amber-50/40" },
+  prox30:   { label: "PRÓXIMOS 30 DÍAS", icon: CalendarClock, cls: "bg-blue-500 text-white", rowCls: "border-l-4 border-blue-300" },
+  futuros:  { label: "FUTUROS", icon: CalendarDays, cls: "bg-slate-500 text-white", rowCls: "" },
+  cerrados: { label: "COMPLETADOS / CANCELADOS", icon: CheckCircle2, cls: "bg-emerald-600 text-white", rowCls: "opacity-60" },
+};
 
 const MES_NOMBRES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const ESTADOS: EstadoPreventivo[] = ["Programado","Próximo","OT creada","En proceso","Completado","Vencido","Reprogramado","Cancelado","Requiere revisión"];
