@@ -110,11 +110,11 @@ export default function Preventivos() {
 
   useEffect(() => { refresh(); }, []);
 
-  const derivado = useMemo(() => schedule.map((s) => ({
-    ...s,
-    estadoVisible: computeStatusBy(s.scheduled_date, s.estado, today) as EstadoPreventivo,
-    diasRestantes: s.scheduled_date ? daysBetween(today, s.scheduled_date) : null,
-  })), [schedule, today]);
+  const derivado = useMemo(() => schedule.map((s) => {
+    const estadoVisible = computeStatusBy(s.scheduled_date, s.estado, today) as EstadoPreventivo;
+    const diasRestantes = s.scheduled_date ? daysBetween(today, s.scheduled_date) : null;
+    return { ...s, estadoVisible, diasRestantes, bucket: bucketOf(estadoVisible, diasRestantes) };
+  }), [schedule, today]);
 
   const aniosDisponibles = useMemo(() => {
     const set = new Set(schedule.map((s) => s.anio));
