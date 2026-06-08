@@ -625,8 +625,17 @@ export default function Preventivos() {
                     });
                     planId = plan.id;
                   }
-                  await crearScheduleManual({ plan_id: planId, scheduled_date: nuevoFecha, observaciones: nuevoObs });
-                  toast({ title: "Preventivo creado" });
+                  const base = new Date(nuevoFecha + "T00:00:00Z");
+                  const fechas: string[] = [];
+                  for (let i = 0; i < nuevoRepetir; i++) {
+                    const d = new Date(base);
+                    d.setUTCMonth(d.getUTCMonth() + i * nuevoIntervaloMeses);
+                    fechas.push(d.toISOString().slice(0, 10));
+                  }
+                  for (const f of fechas) {
+                    await crearScheduleManual({ plan_id: planId, scheduled_date: f, observaciones: nuevoObs });
+                  }
+                  toast({ title: fechas.length > 1 ? `${fechas.length} preventivos creados` : "Preventivo creado" });
                   setOpenNuevo(false);
                   await refresh();
                 } catch (e) {
@@ -636,7 +645,7 @@ export default function Preventivos() {
                 }
               }}
             >
-              {nuevoSaving ? "Guardando..." : "Crear preventivo"}
+              {nuevoSaving ? "Guardando..." : (nuevoRepetir > 1 ? `Crear ${nuevoRepetir} preventivos` : "Crear preventivo")}
             </Button>
           </DialogFooter>
         </DialogContent>
