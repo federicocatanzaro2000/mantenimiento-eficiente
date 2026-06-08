@@ -109,6 +109,8 @@ export default function Preventivos() {
   const [nuevoObs, setNuevoObs] = useState("");
   const [nuevoSaving, setNuevoSaving] = useState(false);
   const [planesList, setPlanesList] = useState<PreventivoPlan[]>([]);
+  const [nuevoRepetir, setNuevoRepetir] = useState<number>(1);
+  const [nuevoIntervaloMeses, setNuevoIntervaloMeses] = useState<number>(1);
 
   const refresh = async () => {
     setLoading(true);
@@ -280,6 +282,7 @@ export default function Preventivos() {
                 setNuevoModo("nuevo");
                 setNuevoEquipo(""); setNuevoCodigo(""); setNuevoTarea(""); setNuevoTipo(""); setNuevoFrec("");
                 setNuevoFecha(today); setNuevoObs(""); setNuevoPlanId("");
+                setNuevoRepetir(1); setNuevoIntervaloMeses(1);
                 try { setPlanesList(await fetchPlanes()); } catch {}
               }}>
                 <Plus className="h-4 w-4" /> Nuevo preventivo
@@ -565,7 +568,7 @@ export default function Preventivos() {
                 <div><Label>Código equipo</Label><Input value={nuevoCodigo} onChange={(e) => setNuevoCodigo(e.target.value)} placeholder="EX1" /></div>
                 <div>
                   <Label>Tipo</Label>
-                  <Select value={nuevoTipo} onValueChange={(v) => setNuevoTipo(v as TipoTarea)}>
+                  <Select value={nuevoTipo || undefined} onValueChange={(v) => setNuevoTipo(v as TipoTarea)}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>{TIPOS_TAREA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
@@ -576,7 +579,7 @@ export default function Preventivos() {
             ) : (
               <div>
                 <Label>Plan existente *</Label>
-                <Select value={nuevoPlanId} onValueChange={setNuevoPlanId}>
+                <Select value={nuevoPlanId || undefined} onValueChange={setNuevoPlanId}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger>
                   <SelectContent>
                     {planesList.length === 0 && <div className="p-2 text-sm text-muted-foreground">No hay planes. Creá uno nuevo primero.</div>}
@@ -588,9 +591,14 @@ export default function Preventivos() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Fecha programada *</Label><Input type="date" value={nuevoFecha} onChange={(e) => setNuevoFecha(e.target.value)} /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Primera fecha *</Label><Input type="date" value={nuevoFecha} onChange={(e) => setNuevoFecha(e.target.value)} /></div>
+              <div><Label>Repetir (nº)</Label><Input type="number" min={1} max={60} value={nuevoRepetir} onChange={(e) => setNuevoRepetir(Math.max(1, Number(e.target.value) || 1))} /></div>
+              <div><Label>Cada (meses)</Label><Input type="number" min={1} max={24} value={nuevoIntervaloMeses} onChange={(e) => setNuevoIntervaloMeses(Math.max(1, Number(e.target.value) || 1))} /></div>
             </div>
+            {nuevoRepetir > 1 && (
+              <p className="text-xs text-muted-foreground">Se crearán {nuevoRepetir} preventivos, uno cada {nuevoIntervaloMeses} mes(es) desde {nuevoFecha || "la fecha elegida"}.</p>
+            )}
             <div><Label>Observaciones</Label><Textarea rows={2} value={nuevoObs} onChange={(e) => setNuevoObs(e.target.value)} /></div>
           </div>
           <DialogFooter>
@@ -617,8 +625,17 @@ export default function Preventivos() {
                     });
                     planId = plan.id;
                   }
-                  await crearScheduleManual({ plan_id: planId, scheduled_date: nuevoFecha, observaciones: nuevoObs });
-                  toast({ title: "Preventivo creado" });
+                  const base = new Date(nuevoFecha + "T00:00:00Z");
+                  const fechas: string[] = [];
+                  for (let i = 0; i < nuevoRepetir; i++) {
+                    const d = new Date(base);
+                    d.setUTCMonth(d.getUTCMonth() + i * nuevoIntervaloMeses);
+                    fechas.push(d.toISOString().slice(0, 10));
+                  }
+                  for (const f of fechas) {
+                    await crearScheduleManual({ plan_id: planId, scheduled_date: f, observaciones: nuevoObs });
+                  }
+                  toast({ title: fechas.length > 1 ? `${fechas.length} preventivos creados` : "Preventivo creado" });
                   setOpenNuevo(false);
                   await refresh();
                 } catch (e) {
@@ -628,7 +645,7 @@ export default function Preventivos() {
                 }
               }}
             >
-              {nuevoSaving ? "Guardando..." : "Crear preventivo"}
+              {nuevoSaving ? "Guardando..." : (nuevoRepetir > 1 ? `Crear ${nuevoRepetir} preventivos` : "Crear preventivo")}
             </Button>
           </DialogFooter>
         </DialogContent>
