@@ -591,9 +591,14 @@ export default function Preventivos() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Fecha programada *</Label><Input type="date" value={nuevoFecha} onChange={(e) => setNuevoFecha(e.target.value)} /></div>
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Primera fecha *</Label><Input type="date" value={nuevoFecha} onChange={(e) => setNuevoFecha(e.target.value)} /></div>
+              <div><Label>Repetir (nº)</Label><Input type="number" min={1} max={60} value={nuevoRepetir} onChange={(e) => setNuevoRepetir(Math.max(1, Number(e.target.value) || 1))} /></div>
+              <div><Label>Cada (meses)</Label><Input type="number" min={1} max={24} value={nuevoIntervaloMeses} onChange={(e) => setNuevoIntervaloMeses(Math.max(1, Number(e.target.value) || 1))} /></div>
             </div>
+            {nuevoRepetir > 1 && (
+              <p className="text-xs text-muted-foreground">Se crearán {nuevoRepetir} preventivos, uno cada {nuevoIntervaloMeses} mes(es) desde {nuevoFecha || "la fecha elegida"}.</p>
+            )}
             <div><Label>Observaciones</Label><Textarea rows={2} value={nuevoObs} onChange={(e) => setNuevoObs(e.target.value)} /></div>
           </div>
           <DialogFooter>
