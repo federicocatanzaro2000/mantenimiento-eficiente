@@ -579,7 +579,7 @@ export default function Preventivos() {
             ) : (
               <div>
                 <Label>Plan existente *</Label>
-                <Select value={nuevoPlanId} onValueChange={setNuevoPlanId}>
+                <Select value={nuevoPlanId || undefined} onValueChange={setNuevoPlanId}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger>
                   <SelectContent>
                     {planesList.length === 0 && <div className="p-2 text-sm text-muted-foreground">No hay planes. Creá uno nuevo primero.</div>}
