@@ -282,6 +282,7 @@ export default function Preventivos() {
                 setNuevoModo("nuevo");
                 setNuevoEquipo(""); setNuevoCodigo(""); setNuevoTarea(""); setNuevoTipo(""); setNuevoFrec("");
                 setNuevoFecha(today); setNuevoObs(""); setNuevoPlanId("");
+                setNuevoRepetir(1); setNuevoIntervaloMeses(1);
                 try { setPlanesList(await fetchPlanes()); } catch {}
               }}>
                 <Plus className="h-4 w-4" /> Nuevo preventivo
