@@ -568,7 +568,7 @@ export default function Preventivos() {
                 <div><Label>Código equipo</Label><Input value={nuevoCodigo} onChange={(e) => setNuevoCodigo(e.target.value)} placeholder="EX1" /></div>
                 <div>
                   <Label>Tipo</Label>
-                  <Select value={nuevoTipo} onValueChange={(v) => setNuevoTipo(v as TipoTarea)}>
+                  <Select value={nuevoTipo || undefined} onValueChange={(v) => setNuevoTipo(v as TipoTarea)}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>{TIPOS_TAREA.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
