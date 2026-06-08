@@ -109,6 +109,8 @@ export default function Preventivos() {
   const [nuevoObs, setNuevoObs] = useState("");
   const [nuevoSaving, setNuevoSaving] = useState(false);
   const [planesList, setPlanesList] = useState<PreventivoPlan[]>([]);
+  const [nuevoRepetir, setNuevoRepetir] = useState<number>(1);
+  const [nuevoIntervaloMeses, setNuevoIntervaloMeses] = useState<number>(1);
 
   const refresh = async () => {
     setLoading(true);
