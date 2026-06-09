@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, ArrowLeft, Printer, Lock } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo-incalfood.png";
+
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 import { Combobox, ComboboxOption } from "@/components/Combobox";
