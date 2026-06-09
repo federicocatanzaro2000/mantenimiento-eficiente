@@ -142,6 +142,18 @@ export default function FiltrosPage() {
     };
   }, [ordenes]);
 
+  // Nro orden options from existing ordenes
+  const optNroOrden = useMemo(() => {
+    const map = new Map<string, string>();
+    ordenes.forEach((o) => {
+      const n = String(o.nroOrden ?? "").trim();
+      if (n && n !== "0" && n !== "") map.set(n, n);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => Number(b[0]) - Number(a[0]))
+      .map(([value, label]) => ({ value, label }));
+  }, [ordenes]);
+
   // Person option lists
   const optSolicitante = useMemo(() => buildPersonOptions(people, "can_be_requester", hist.solicitante), [people, hist.solicitante]);
   const optTecnico = useMemo(() => buildPersonOptions(people, "can_be_technician", hist.tecnico), [people, hist.tecnico]);
@@ -279,7 +291,9 @@ export default function FiltrosPage() {
         </Section>
 
         <Section title="Datos generales">
-          <F label="Nro. de orden"><Input value={local.nroOrden} onChange={(e) => set("nroOrden", e.target.value)} /></F>
+          <F label="Nro. de orden">
+            <SearchSelect value={local.nroOrden} onChange={(v) => set("nroOrden", v)} options={optNroOrden} placeholder="Buscar número de orden..." />
+          </F>
           <F label="Sector">
             <SearchSelect value={local.sector} onChange={(v) => set("sector", v)} options={optSector} placeholder="Seleccionar sector..." />
           </F>
