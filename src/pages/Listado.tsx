@@ -32,10 +32,36 @@ export default function Listado() {
     const q = search.trim().toLowerCase();
     const list = !q ? ordenes : ordenes.filter((o) => {
       const aprobadoTxt = o.aprobado ? "aprobado" : "no aprobado";
+      const materialesTxt = (o.materialesUtilizados ?? [])
+        .map((m) => `${m.descripcion} ${m.codigo} ${m.cantidad}`)
+        .join(" ");
       return [
-        o.nroOrden, o.fechaCreacion, aprobadoTxt, o.sector, o.tipoOrden,
-        o.estado, o.tecnicoResponsable, o.prioridad,
-        o.horasPresupuestadas, o.horasReales,
+        o.nroOrden,
+        o.fechaCreacion,
+        o.fechaInicio,
+        o.fechaFinalizacion,
+        o.fechaLimiteRealizacion,
+        aprobadoTxt,
+        o.sector,
+        o.tipoOrden,
+        o.estado,
+        o.tecnicoResponsable,
+        o.prioridad,
+        o.horasPresupuestadas,
+        o.horasReales,
+        o.codigoEquipo,
+        o.nombreEquipo,
+        o.solicitante,
+        o.descripcionProblema,
+        o.trabajoSolicitado,
+        o.codigoDocumento,
+        o.responsableControlCalidad,
+        o.elaboro,
+        o.reviso,
+        o.aprobo,
+        o.observaciones,
+        o.estadoRecepcionEquipo,
+        materialesTxt,
       ].some((v) => String(v ?? "").toLowerCase().includes(q));
     });
     const sorted = [...list].sort((a, b) => {
