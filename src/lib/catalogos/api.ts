@@ -5,9 +5,10 @@ export interface Person {
   id: string; full_name: string; active: boolean;
   can_be_requester: boolean; can_be_technician: boolean;
   can_be_quality_responsible: boolean; can_be_created_by: boolean; can_be_reviewed_by: boolean;
+  can_be_approver: boolean;
 }
 export interface Equipment { id: string; code: string; name: string; active: boolean; }
-export type PersonField = "can_be_requester" | "can_be_technician" | "can_be_quality_responsible" | "can_be_created_by" | "can_be_reviewed_by";
+export type PersonField = "can_be_requester" | "can_be_technician" | "can_be_quality_responsible" | "can_be_created_by" | "can_be_reviewed_by" | "can_be_approver";
 
 // SECTORS
 export async function listSectors(activeOnly = false): Promise<Sector[]> {
