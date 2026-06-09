@@ -444,7 +444,18 @@ export default function Preventivos() {
                   </thead>
                   <tbody>
                     {filtrado.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos en esta vista. Probá otro filtro o importá el Excel.</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">
+                        {filtroAnio !== "__all" ? (
+                          <div className="space-y-3">
+                            <div>No hay preventivos generados para {filtroAnio}.</div>
+                            {canManagePreventivos(roles) && (
+                              <Button size="sm" onClick={() => abrirGenerarAnio(Number(filtroAnio))}>
+                                <CalendarPlus className="h-4 w-4" /> Generar preventivos {filtroAnio}
+                              </Button>
+                            )}
+                          </div>
+                        ) : "Sin preventivos en esta vista. Probá otro filtro o importá el Excel."}
+                      </td></tr>
                     )}
                     {(quickFilter === "operativo" ? BUCKET_ORDER : ["__flat__" as const]).map((bk) => {
                       const items = bk === "__flat__" ? filtrado : agrupado[bk];
