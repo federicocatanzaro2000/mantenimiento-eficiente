@@ -1,0 +1,1 @@
+ALTER TABLE public.people ADD COLUMN IF NOT EXISTS can_be_approver boolean NOT NULL DEFAULT false;
