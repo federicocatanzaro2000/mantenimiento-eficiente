@@ -166,6 +166,7 @@ export type Database = {
       people: {
         Row: {
           active: boolean
+          can_be_approver: boolean
           can_be_created_by: boolean
           can_be_quality_responsible: boolean
           can_be_requester: boolean
@@ -178,6 +179,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          can_be_approver?: boolean
           can_be_created_by?: boolean
           can_be_quality_responsible?: boolean
           can_be_requester?: boolean
@@ -190,6 +192,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          can_be_approver?: boolean
           can_be_created_by?: boolean
           can_be_quality_responsible?: boolean
           can_be_requester?: boolean

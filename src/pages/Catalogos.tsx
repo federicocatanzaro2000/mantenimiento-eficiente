@@ -89,6 +89,7 @@ const PERSON_PERMS: { key: keyof Person; label: string }[] = [
   { key: "can_be_quality_responsible", label: "Resp. Calidad" },
   { key: "can_be_created_by", label: "Elaboró" },
   { key: "can_be_reviewed_by", label: "Revisó" },
+  { key: "can_be_approver", label: "Aprobó" },
 ];
 
 function PersonasTab({ canEdit }: { canEdit: boolean }) {
@@ -99,11 +100,11 @@ function PersonasTab({ canEdit }: { canEdit: boolean }) {
   const [form, setForm] = useState<Omit<Person, "id">>({
     full_name: "", active: true,
     can_be_requester: true, can_be_technician: true, can_be_quality_responsible: true,
-    can_be_created_by: true, can_be_reviewed_by: true,
+    can_be_created_by: true, can_be_reviewed_by: true, can_be_approver: false,
   });
   const load = () => listPeople().then(setItems).catch((e) => toast.error(e.message));
   useEffect(() => { load(); }, []);
-  const openNew = () => { setEdit(null); setForm({ full_name: "", active: true, can_be_requester: true, can_be_technician: true, can_be_quality_responsible: true, can_be_created_by: true, can_be_reviewed_by: true }); setOpen(true); };
+  const openNew = () => { setEdit(null); setForm({ full_name: "", active: true, can_be_requester: true, can_be_technician: true, can_be_quality_responsible: true, can_be_created_by: true, can_be_reviewed_by: true, can_be_approver: false }); setOpen(true); };
   const openEdit = (p: Person) => { setEdit(p); const { id, ...rest } = p; setForm(rest); setOpen(true); };
   const save = async () => {
     if (!form.full_name.trim()) return toast.error("Nombre obligatorio");

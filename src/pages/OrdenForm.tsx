@@ -399,7 +399,12 @@ export default function OrdenForm() {
               value={orden.reviso} onChange={(v) => set("reviso", v)} disabled={!can6}
               allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
-          <Field label="Aprobó"><Input value={orden.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></Field>
+          <Field label="Aprobó">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_approver).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.aprobo} onChange={(v) => set("aprobo", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
         </Section>
 
         <div className="flex justify-end gap-2 pt-2 no-print">
