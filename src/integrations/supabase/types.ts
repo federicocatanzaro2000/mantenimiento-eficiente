@@ -205,6 +205,103 @@ export type Database = {
         }
         Relationships: []
       }
+      preventive_manual_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          equipment_code_snapshot: string
+          equipment_id: string | null
+          equipment_name_snapshot: string
+          estimated_hours: number | null
+          frequency_label: string | null
+          id: string
+          notes: string | null
+          preventive_type: string
+          responsible_id: string | null
+          scheduled_date: string
+          scheduled_day: number
+          scheduled_month: number
+          scheduled_year: number
+          source: string
+          status: string
+          task_name: string
+          updated_at: string
+          updated_by: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          equipment_code_snapshot: string
+          equipment_id?: string | null
+          equipment_name_snapshot: string
+          estimated_hours?: number | null
+          frequency_label?: string | null
+          id?: string
+          notes?: string | null
+          preventive_type?: string
+          responsible_id?: string | null
+          scheduled_date: string
+          scheduled_day: number
+          scheduled_month: number
+          scheduled_year: number
+          source?: string
+          status?: string
+          task_name: string
+          updated_at?: string
+          updated_by?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          equipment_code_snapshot?: string
+          equipment_id?: string | null
+          equipment_name_snapshot?: string
+          estimated_hours?: number | null
+          frequency_label?: string | null
+          id?: string
+          notes?: string | null
+          preventive_type?: string
+          responsible_id?: string | null
+          scheduled_date?: string
+          scheduled_day?: number
+          scheduled_month?: number
+          scheduled_year?: number
+          source?: string
+          status?: string
+          task_name?: string
+          updated_at?: string
+          updated_by?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "preventive_manual_items_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventive_manual_items_responsible_id_fkey"
+            columns: ["responsible_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventive_manual_items_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preventivos_alertas: {
         Row: {
           alert_date: string
