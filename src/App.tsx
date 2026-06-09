@@ -16,6 +16,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AdminUsuarios from "./pages/AdminUsuarios";
 
 import Catalogos from "./pages/Catalogos";
+import PreventivosPage from "./pages/PreventivosPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/resultados" element={<ProtectedRoute><ResultadosPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             
+            <Route path="/preventivos" element={<ProtectedRoute><PreventivosPage /></ProtectedRoute>} />
             <Route path="/catalogos" element={<ProtectedRoute><Catalogos /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute requireAdmin><AdminUsuarios /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
