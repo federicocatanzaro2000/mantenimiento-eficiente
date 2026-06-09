@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import logo from "@/assets/logo-incalfood.png";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
+import { Combobox, ComboboxOption } from "@/components/Combobox";
+import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -73,6 +75,15 @@ export default function OrdenForm() {
   const isEdit = id && id !== "nueva";
   const [orden, setOrden] = useState<Orden | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [equipos, setEquipos] = useState<Equipment[]>([]);
+
+  useEffect(() => {
+    Promise.all([listSectors(), listPeople(), listEquipment()])
+      .then(([s, p, e]) => { setSectors(s); setPeople(p); setEquipos(e); })
+      .catch(() => { /* silencioso, los campos seguirán mostrando snapshot */ });
+  }, []);
 
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
