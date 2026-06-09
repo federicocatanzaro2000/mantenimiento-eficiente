@@ -275,7 +275,45 @@ export default function Preventivos() {
     }
   };
 
-  return (
+  const abrirGenerarAnio = (anioInicial?: number) => {
+    const y = anioInicial ?? currentYear;
+    setGenAnio(y);
+    setGenPreview(null);
+    setOpenGenerar(true);
+    void cargarPreview(y);
+  };
+
+  const cargarPreview = async (y: number) => {
+    setGenLoadingPreview(true);
+    try {
+      const p = await previewGenerarAnio(y);
+      setGenPreview(p);
+    } catch (e) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGenLoadingPreview(false);
+    }
+  };
+
+  const confirmarGenerar = async () => {
+    setGenSaving(true);
+    try {
+      const r = await generarAnio(genAnio);
+      toast({
+        title: `Generación ${genAnio} finalizada`,
+        description: `${r.creados} creados · ${r.omitidos} omitidos (ya existían)${r.planesSinFrecuencia ? ` · ${r.planesSinFrecuencia} planes sin frecuencia mensual` : ""}${r.errores.length ? ` · ${r.errores.length} errores` : ""}`,
+      });
+      setOpenGenerar(false);
+      setFiltroAnio(String(genAnio));
+      await refresh();
+    } catch (e) {
+      toast({ title: "Error generando", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGenSaving(false);
+    }
+  };
+
+
     <AppLayout>
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
