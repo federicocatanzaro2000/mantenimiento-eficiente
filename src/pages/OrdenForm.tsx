@@ -172,7 +172,7 @@ export default function OrdenForm() {
           <h2 className="text-xl font-semibold">{isEdit ? `Editar Orden #${orden.nroOrden}` : "Nueva Orden"}</h2>
         </div>
         <div className="flex gap-2 no-print">
-          <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
+          <Button variant="outline" onClick={() => handlePrint(orden)} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           {puedeGuardar && (
             <>
