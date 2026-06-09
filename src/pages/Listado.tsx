@@ -102,6 +102,7 @@ export default function Listado() {
                 <Th k="nroOrden">Nro. Orden</Th>
                 <Th k="fechaCreacion">Fecha Creación</Th>
                 <Th k="aprobadoLabel">Aprobado</Th>
+                <Th k="codigoEquipo">Código Equipo</Th>
                 <Th k="sector">Sector</Th>
                 <Th k="tipoOrden">Tipo</Th>
                 <Th k="estado">Estado</Th>
