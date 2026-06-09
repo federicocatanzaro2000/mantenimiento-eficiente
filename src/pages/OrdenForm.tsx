@@ -19,6 +19,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 import { Combobox, ComboboxOption } from "@/components/Combobox";
 import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
+import { PrintableOrden } from "@/components/PrintableOrden";
+
+const handlePrint = (orden: Orden) => {
+  const filename = orden.nroOrden ? `INCALFOOD OIT ${orden.nroOrden}` : "INCALFOOD OIT SIN NUMERO";
+  const prevTitle = document.title;
+  document.title = filename;
+  const restore = () => {
+    document.title = prevTitle;
+    window.removeEventListener("afterprint", restore);
+  };
+  window.addEventListener("afterprint", restore);
+  setTimeout(() => window.print(), 50);
+};
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
