@@ -662,13 +662,10 @@ export default function Preventivos() {
               <div><Label>Repetir (nº)</Label><Input type="number" min={1} max={60} value={nuevoRepetir} onChange={(e) => setNuevoRepetir(Math.max(1, Number(e.target.value) || 1))} /></div>
               <div><Label>Cada (meses)</Label><Input type="number" min={1} max={24} value={nuevoIntervaloMeses} onChange={(e) => setNuevoIntervaloMeses(Math.max(1, Number(e.target.value) || 1))} /></div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="text-xs text-muted-foreground self-center mr-1">Atajos:</span>
-              <Button type="button" size="sm" variant="secondary" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(12); setNuevoIntervaloMeses(1); }}>Generar 2026 (mensual)</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(6); setNuevoIntervaloMeses(2); }}>2026 bimestral</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(4); setNuevoIntervaloMeses(3); }}>2026 trimestral</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(2); setNuevoIntervaloMeses(6); }}>2026 semestral</Button>
-            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tip: para generar el cronograma completo de un año a partir de las plantillas activas usá el botón <strong>Generar año</strong> arriba.
+            </p>
+
             {nuevoRepetir > 1 && (
               <p className="text-xs text-muted-foreground">Se crearán {nuevoRepetir} preventivos, uno cada {nuevoIntervaloMeses} mes(es) desde {nuevoFecha || "la fecha elegida"}.</p>
             )}
