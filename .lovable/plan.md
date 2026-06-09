@@ -1,62 +1,119 @@
-# Mejora del módulo Preventivos — Generador anual real
+# Módulo "Preventivos" desde cero
 
-## Diagnóstico de la causa raíz
+Reemplazo completo del módulo anterior. Tabla nueva, página nueva, sin dependencias de lo viejo.
 
-El sistema **no está hardcodeado a 2025**:
-- El calendario inicializa con la fecha actual (`todayBA()`), no con 2025.
-- El filtro de año se construye dinámicamente desde los datos.
-- La importación de Excel respeta el año detectado en cada hoja.
+## 1. Base de datos (migración)
 
-El bloqueo real es que **no existe un generador anual basado en plantillas**:
-- Los únicos atajos para crear preventivos 2026 son 4 botones dentro del diálogo "Nuevo preventivo" hardcodeados a `2026-01-15` y aplicados a **un solo plan a la vez**.
-- No hay forma de decir "tomá todos los planes activos y armá el cronograma del año X" en una sola acción.
-- Cada plan tiene su frecuencia (`frecuencia_valor` + `frecuencia_unidad`) pero esa info no se usa para autogenerar instancias.
+Nueva tabla `public.preventive_manual_items` (independiente de las tablas `preventivos_*` viejas, que quedan intactas por ahora):
 
-## Cambios
+Campos clave:
+- `id uuid pk`
+- `scheduled_date date NOT NULL`, `scheduled_year int`, `scheduled_month int`, `scheduled_day int` (calculados por trigger desde `scheduled_date`)
+- `equipment_id uuid` → FK opcional a `equipment(id)`
+- `equipment_code_snapshot text NOT NULL`, `equipment_name_snapshot text NOT NULL`
+- `task_name text NOT NULL`
+- `preventive_type text NOT NULL` (Mecánico, Eléctrico, Refrigeración, Lubricación, Limpieza, Otro)
+- `frequency_label text` (ej. "6000 hs", "6 meses", "-")
+- `status text NOT NULL DEFAULT 'Programado'` (Programado | Vencido | Con OIT | Realizado | Cancelado)
+- `responsible_id uuid` (FK a people, opcional)
+- `estimated_hours numeric`
+- `notes text`
+- `work_order_id uuid` (FK a `ordenes(id)`)
+- `source text` (`manual` | `excel_import` | `duplicated_year`)
+- `active boolean default true`
+- `created_by`, `updated_by`, `created_at`, `updated_at`
 
-### 1. Base de datos (migración)
-Agregar a `preventivos_planes` dos columnas opcionales:
-- `dia_preferido int` (1–31, default 15) — día del mes al que se programan las instancias.
-- `mes_inicio int` (1–12, default 1) — primer mes del año en el que arranca la cadencia.
+Reglas:
+- Trigger `BEFORE INSERT/UPDATE` que recalcula año/mes/día desde `scheduled_date`.
+- Trigger `touch_updated_at`.
+- Índice único parcial: `(equipment_code_snapshot, task_name, scheduled_date) WHERE active` → idempotencia de import.
+- Índices: `scheduled_date`, `scheduled_year`, `equipment_id`, `status`, `work_order_id`.
+- RLS + GRANT (`authenticated` RW, `service_role` ALL). Política: cualquier autenticado lee; supervisores/admin escriben (siguiendo patrón existente con `has_role`).
 
-No se borran datos. Los planes existentes quedan con valores por defecto.
+No tocamos: `ordenes`, `equipment`, `people`, `sectors`, `user_roles`, ni los `preventivos_*` viejos.
 
-### 2. Nueva API `generarAnio(year, opts)` en `src/lib/preventivos/api.ts`
-- Carga todos los `preventivos_planes` con `activo = true` y `frecuencia_unidad = 'meses'`.
-- Para cada plan calcula los meses objetivo según `frecuencia_valor`:
-  - mensual (1) → 12 instancias, bimestral (2) → 6, trimestral (3) → 4, cuatrimestral (4) → 3, semestral (6) → 2, anual (12) → 1.
-- Para cada mes resuelve la fecha con `dia_preferido` ajustando al último día válido (ej.: 31 en febrero → 28/29).
-- Inserta en `preventivos_schedule` con `source_cell = "auto-{year}"` y `onConflict: "plan_id,anio,mes,source_cell"` → **idempotente**. Re-ejecutar el mismo año no duplica.
-- Devuelve `{ creados, omitidos, planesSinFrecuencia, errores }`.
-- Modo `dryRun: true` cuenta sin insertar (para la vista previa del modal).
+## 2. API frontend
 
-### 3. UI: botón y modal "Generar año"
-En `src/pages/Preventivos.tsx`, junto a "Nuevo preventivo" e "Importar Excel":
-- Nuevo botón **"Generar año"** (solo para `canManagePreventivos`).
-- Modal con:
-  - Select de año (rango: año actual − 1 … año actual + 5, editable libremente).
-  - Vista previa en vivo (dryRun): "X plantillas activas · Y instancias a crear · Z ya existen".
-  - Botones Cancelar / Generar.
-- Toast con resumen final.
+Nuevo `src/lib/preventiveManual/api.ts`:
+- `list({year?, month?, equipmentCode?, type?, status?, withOIT?, search?})`
+- `create`, `update`, `softDelete`
+- `markRealizado(id)`, `cancelar(id)`
+- `duplicateYear({from, to, mode: 'fechas' | 'estructura' | 'solo_equipos'})`
+- `createOITFromPreventivo(id)` → inserta en `ordenes` (nro_orden = max+1, tipo `Preventivo`, hereda equipo/tarea/fecha) y setea `work_order_id` + `status='Con OIT'`.
 
-### 4. Estado vacío en la vista Tabla
-Si el filtro Año tiene un año seleccionado y la lista filtrada está vacía:
-- Mensaje "No hay preventivos generados para {año}".
-- Botón inline "Generar preventivos {año}" que abre el modal con ese año preseleccionado.
+Tipos en `src/lib/preventiveManual/types.ts`.
 
-### 5. Limpieza de hardcodes
-- Eliminar los 4 atajos "Generar 2026 / bimestral / trimestral / semestral" del diálogo "Nuevo preventivo" (quedan reemplazados por el generador anual real).
+## 3. Importador Excel
 
-## Lo que NO se toca
-- Estructura de tabs (Tabla / Cronograma / Calendario / Importar).
-- Calendario, Cronograma, filtros existentes, contadores superiores, importador Excel, creación de OIT desde preventivo, permisos, dashboard, OITs.
-- Tipos `EstadoPreventivo`, `ESTADO_COLOR`, ni las funciones `computeStatusBy` / `deriveEstado`.
-- Tabla `ordenes` ni el trigger que sincroniza `preventivos_schedule.estado` cuando se crea una OIT.
+`src/lib/preventiveManual/excelImport.ts` usando `xlsx` (ya en deps si no, lo agrego):
+- Para cada hoja, extraer año del nombre con regex `\d{4}`.
+- Detectar fila de encabezado (la que contiene "Enero".."Diciembre"). Mapear columnas de meses → rango de 5 columnas (semanas) por mes.
+- Recorrer filas: si col A o B contiene `Equipo (CODIGO)`, abrir bloque equipo (parsea `nombre` y `codigo` con regex `(.+?)\s*\((.+?)\)`).
+- Filas siguientes con texto en columna "tarea" (3ª/4ª) → tarea. Columna previa = `frequency_label`.
+- Saltar filas "Horas de trabajo" y filas de números puros sin tarea.
+- Para cada celda numérica 1–31 en columnas de mes → fecha `YYYY-MM-DD`. Validar día existe en el mes (sino marcar error).
+- Validar equipo contra catálogo `equipment` (match por `codigo`). Si no existe → reportar como "equipo no encontrado", omitir.
+- Tipo se infiere del nombre de tarea ("mecanico"→Mecánico, "electrico"→Eléctrico, "refrigeracion"→Refrigeración, "lubricacion"→Lubricación, "limpieza"→Limpieza, sino Otro).
+- Previsualización con conteos antes de insertar. Insert en bulk con `upsert` sobre el índice único → idempotente.
 
-## Criterios de aceptación cubiertos
-- Generación de 2026, 2027 o cualquier año futuro desde un único botón.
-- Idempotente: re-ejecutar no duplica.
-- Respeta frecuencia de cada plan y el día preferido (ajustando meses cortos).
-- Filtro de año sigue siendo data-driven (al generar 2027 aparece 2027 al refrescar).
-- Calendario y Cronograma ya funcionan con cualquier año (no requieren cambio).
-- No se borran preventivos existentes.
+## 4. Exportador Excel
+
+`exportYear(year)`: arma planilla con columnas fijas (Código, Nombre, Frecuencia, Tarea, Tipo) + 12 columnas de meses con días separados por coma. Descarga `INCALFOOD Preventivos {year}.xlsx`.
+
+## 5. UI
+
+Ruta `/preventivos` con `<ProtectedRoute>`. Página `src/pages/PreventivosPage.tsx`.
+
+Header:
+- Título "Preventivos" + subtítulo.
+- Botones: Nuevo, Importar Excel, Exportar Excel, Duplicar año, Refrescar.
+
+Filtros (sticky): Año (select editable + años con datos + año actual), Mes, SearchSelect Código equipo (catálogo `equipment`), SearchSelect Nombre equipo, Tipo, Estado, Con/Sin OIT, búsqueda de tarea.
+
+Tarjetas indicadoras: Total, Vencidos, Próx 7d, Próx 30d, Con OIT, Sin OIT, Realizados.
+
+Tabs `Excel | Calendario | Listado`:
+
+A. **Vista Excel** `PreventivosGridView.tsx`: tabla agrupada por equipo. Columnas fijas (sticky-left) + 12 columnas de meses. Celda muestra días separados por coma. Click en día → modal editar. Click en celda vacía → modal nuevo prellenado con equipo/mes.
+
+B. **Vista Calendario** `PreventivosCalendarView.tsx`: grid mes con chips por evento (color por estado). Navegación mes/año. Click día vacío → nuevo. Click chip → detalle con acciones.
+
+C. **Vista Listado** `PreventivosListView.tsx`: tabla con paginación, ordenada por fecha asc, acciones por fila.
+
+Modales reutilizables:
+- `PreventivoFormDialog` (nuevo/editar) con SearchSelect equipo (auto-completa nombre), Datepicker, selects.
+  Botones: Guardar / Guardar y cargar otro (mantiene equipo+tipo+frecuencia+año, limpia fecha+tarea+observaciones) / Cancelar.
+- `ImportExcelDialog`: input archivo → previsualización (planes detectados, equipos no encontrados, duplicados) → confirmar.
+- `DuplicarAnioDialog`: año origen + año destino + modo + previsualización.
+- `PreventivoDetailDialog`: detalle con acciones (Editar, Crear/Ver OIT, Marcar realizado, Cancelar, Desactivar).
+
+## 6. Navegación
+
+Agregar tab "Preventivos" en `src/components/AppLayout.tsx` y ruta en `src/App.tsx`.
+
+## 7. Estados
+
+Estado visual calculado: si `status` ∈ {Programado} y `scheduled_date < hoy` y sin OIT → mostrar "Vencido" (calculado en cliente, no se persiste salvo acción manual). Los estados explícitos (Con OIT, Realizado, Cancelado) ganan.
+
+## 8. Permisos
+
+- Supervisor/Admin: todo.
+- Operario/Calidad/Pañol: ver + crear OIT (si tiene permiso de crear OIT en sistema actual).
+- Botones se ocultan según rol (helpers existentes en `src/lib/permissions.ts`).
+
+## 9. Limpieza opcional
+
+No se elimina nada de `preventivos_*` viejas para no romper datos históricos; quedan ortogonales. Si después confirmás, las eliminamos en un segundo paso.
+
+## Detalles técnicos
+
+- Dep nueva: `xlsx` (si no está). Verifico antes.
+- Tipos generados de Supabase se regeneran tras la migración.
+- Archivos nuevos: migración SQL, `lib/preventiveManual/{types,api,excelImport,excelExport}.ts`, `pages/PreventivosPage.tsx`, `components/preventivos/{FormDialog,ImportDialog,DuplicarAnioDialog,DetailDialog,GridView,CalendarView,ListView,IndicatorsBar,FiltersBar}.tsx`.
+- Archivos editados: `src/App.tsx`, `src/components/AppLayout.tsx`.
+
+## Riesgos / dudas
+
+1. El Excel tiene celdas combinadas y filas auxiliares ("Horas de trabajo", filas de ceros). El parser las salta heurísticamente; si algún equipo del Excel no está en el catálogo `equipment` actual, esos preventivos NO se importan y aparecen en el reporte. ¿Querés que en ese caso te ofrezca **crear el equipo automáticamente** durante la importación, o estricto (omitir y reportar)?
+2. La hoja 2024 tiene 429 columnas (estructura por semanas), mientras 2025/2026 tienen ~67. El parser detectará columnas de mes por el encabezado, así que funcionará en ambos formatos.
+3. ¿OK con que las tablas viejas `preventivos_planes/schedule/imports/alertas` queden sin uso pero sin borrar?
