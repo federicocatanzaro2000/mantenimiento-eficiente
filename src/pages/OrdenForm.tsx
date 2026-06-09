@@ -14,11 +14,24 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Save, ArrowLeft, Printer, Lock } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo-incalfood.png";
+
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 import { Combobox, ComboboxOption } from "@/components/Combobox";
 import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
+import { PrintableOrden } from "@/components/PrintableOrden";
+
+const handlePrint = (orden: Orden) => {
+  const filename = orden.nroOrden ? `INCALFOOD OIT ${orden.nroOrden}` : "INCALFOOD OIT SIN NUMERO";
+  const prevTitle = document.title;
+  document.title = filename;
+  const restore = () => {
+    document.title = prevTitle;
+    window.removeEventListener("afterprint", restore);
+  };
+  window.addEventListener("afterprint", restore);
+  setTimeout(() => window.print(), 50);
+};
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -159,7 +172,7 @@ export default function OrdenForm() {
           <h2 className="text-xl font-semibold">{isEdit ? `Editar Orden #${orden.nroOrden}` : "Nueva Orden"}</h2>
         </div>
         <div className="flex gap-2 no-print">
-          <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
+          <Button variant="outline" onClick={() => handlePrint(orden)} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           {puedeGuardar && (
             <>
@@ -177,24 +190,8 @@ export default function OrdenForm() {
         </div>
       )}
 
-      <div className="hidden print-show print:block mb-4 avoid-break">
-        <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 gap-4">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="INCALFOOD" className="h-14 w-auto" />
-            <div>
-              <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
-              <p className="text-xs">Sistema de gestión industrial</p>
-            </div>
-          </div>
-          <div className="text-right text-xs">
-            <div><b>N°:</b> {orden.nroOrden}</div>
-            <div><b>Fecha:</b> {orden.fechaCreacion}</div>
-            <div><b>Estado:</b> {orden.estado} — <b>Prioridad:</b> {orden.prioridad}</div>
-            <div><b>Aprobado:</b> {orden.aprobado ? "SI" : "NO"}</div>
-            {isEdit && <div><b>Creado:</b> {nombreDe(orden.createdBy)} | <b>Mod:</b> {nombreDe(orden.updatedBy)}</div>}
-          </div>
-        </div>
-      </div>
+      <PrintableOrden orden={orden} />
+
 
       <div className="space-y-4">
         <Section title="1. Datos principales" seccion={1} canEdit={can1}>
