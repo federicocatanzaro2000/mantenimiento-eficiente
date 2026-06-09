@@ -191,3 +191,144 @@ export async function importarParseado(parsed: ParsedImport, userId: string) {
 export function deriveEstado(s: PreventivoSchedule, todayISO: string): EstadoPreventivo {
   return computeStatusBy(s.scheduled_date, s.estado, todayISO);
 }
+
+// ---------- Generación anual de preventivos a partir de plantillas ----------
+
+export interface GenerarAnioResultado {
+  creados: number;
+  omitidos: number;
+  planesProcesados: number;
+  planesSinFrecuencia: number;
+  candidatos: number;
+  errores: string[];
+}
+
+function lastDayOfMonth(year: number, month1: number): number {
+  return new Date(Date.UTC(year, month1, 0)).getUTCDate();
+}
+
+function isoFor(year: number, month1: number, preferredDay: number): string {
+  const day = Math.min(Math.max(1, preferredDay), lastDayOfMonth(year, month1));
+  return `${year}-${String(month1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+interface Candidato {
+  plan_id: string;
+  scheduled_date: string;
+  anio: number;
+  mes: number;
+  dia: number;
+}
+
+async function planesParaGenerar(): Promise<{ planes: PreventivoPlan[]; sinFrecuencia: number }> {
+  const { data, error } = await supabase
+    .from("preventivos_planes")
+    .select("*")
+    .eq("activo", true);
+  if (error) throw error;
+  const todos = (data ?? []) as unknown as PreventivoPlan[];
+  const validos = todos.filter((p) =>
+    p.frecuencia_unidad === "meses" &&
+    typeof p.frecuencia_valor === "number" &&
+    p.frecuencia_valor >= 1 &&
+    p.frecuencia_valor <= 12
+  );
+  return { planes: validos, sinFrecuencia: todos.length - validos.length };
+}
+
+function calcularCandidatos(planes: PreventivoPlan[], year: number): Candidato[] {
+  const out: Candidato[] = [];
+  for (const p of planes) {
+    const step = p.frecuencia_valor as number;
+    const startMes = Math.min(Math.max(1, (p as any).mes_inicio ?? 1), 12);
+    const dia = (p as any).dia_preferido ?? 15;
+    for (let m = startMes; m <= 12; m += step) {
+      const fecha = isoFor(year, m, dia);
+      const realDia = Number(fecha.slice(8, 10));
+      out.push({ plan_id: p.id, scheduled_date: fecha, anio: year, mes: m, dia: realDia });
+    }
+  }
+  return out;
+}
+
+export async function previewGenerarAnio(year: number): Promise<{ planes: number; planesSinFrecuencia: number; candidatos: number; existentes: number; nuevos: number }> {
+  const { planes, sinFrecuencia } = await planesParaGenerar();
+  const cand = calcularCandidatos(planes, year);
+  if (cand.length === 0) return { planes: planes.length, planesSinFrecuencia: sinFrecuencia, candidatos: 0, existentes: 0, nuevos: 0 };
+  const sourceCell = `auto-${year}`;
+  const planIds = Array.from(new Set(cand.map((c) => c.plan_id)));
+  const { data, error } = await supabase
+    .from("preventivos_schedule")
+    .select("plan_id, anio, mes, source_cell")
+    .eq("anio", year)
+    .eq("source_cell", sourceCell)
+    .in("plan_id", planIds);
+  if (error) throw error;
+  const existing = new Set((data ?? []).map((r: any) => `${r.plan_id}|${r.anio}|${r.mes}|${r.source_cell}`));
+  let existentes = 0;
+  for (const c of cand) {
+    if (existing.has(`${c.plan_id}|${c.anio}|${c.mes}|${sourceCell}`)) existentes++;
+  }
+  return {
+    planes: planes.length,
+    planesSinFrecuencia: sinFrecuencia,
+    candidatos: cand.length,
+    existentes,
+    nuevos: cand.length - existentes,
+  };
+}
+
+export async function generarAnio(year: number): Promise<GenerarAnioResultado> {
+  const errores: string[] = [];
+  const { planes, sinFrecuencia } = await planesParaGenerar();
+  const cand = calcularCandidatos(planes, year);
+  if (cand.length === 0) {
+    return { creados: 0, omitidos: 0, planesProcesados: planes.length, planesSinFrecuencia: sinFrecuencia, candidatos: 0, errores };
+  }
+  const sourceCell = `auto-${year}`;
+  const rows = cand.map((c) => ({
+    plan_id: c.plan_id,
+    scheduled_date: c.scheduled_date,
+    anio: c.anio,
+    mes: c.mes,
+    dia: c.dia,
+    estado: "Programado",
+    source_cell: sourceCell,
+  }));
+
+  // Detectar existentes ANTES para calcular omitidos con precisión
+  const planIds = Array.from(new Set(cand.map((c) => c.plan_id)));
+  const { data: existingRows, error: exErr } = await supabase
+    .from("preventivos_schedule")
+    .select("plan_id, mes")
+    .eq("anio", year)
+    .eq("source_cell", sourceCell)
+    .in("plan_id", planIds);
+  if (exErr) throw exErr;
+  const existing = new Set((existingRows ?? []).map((r: any) => `${r.plan_id}|${r.mes}`));
+  const omitidos = rows.filter((r) => existing.has(`${r.plan_id}|${r.mes}`)).length;
+
+  // Upsert con ignoreDuplicates: idempotente sobre (plan_id, anio, mes, source_cell)
+  let creados = 0;
+  for (let i = 0; i < rows.length; i += 500) {
+    const chunk = rows.slice(i, i + 500);
+    const { error } = await supabase
+      .from("preventivos_schedule")
+      .upsert(chunk, { onConflict: "plan_id,anio,mes,source_cell", ignoreDuplicates: true });
+    if (error) {
+      errores.push(error.message);
+    }
+  }
+  creados = rows.length - omitidos - errores.length;
+  if (creados < 0) creados = 0;
+
+  return {
+    creados,
+    omitidos,
+    planesProcesados: planes.length,
+    planesSinFrecuencia: sinFrecuencia,
+    candidatos: cand.length,
+    errores,
+  };
+}
+

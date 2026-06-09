@@ -17,10 +17,12 @@ import { EstadoPreventivo, ESTADO_COLOR, PreventivoScheduleConPlan, PreventivoPl
 import {
   fetchSchedule, fetchPlanes, updateScheduleEstado, reprogramarSchedule, eliminarSchedule,
   importarParseado, crearOrdenDesdePreventivo, vincularOrden, crearPlanManual, crearScheduleManual,
+  generarAnio, previewGenerarAnio,
 } from "@/lib/preventivos/api";
 import { parseExcel } from "@/lib/preventivos/parser";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock, Plus } from "lucide-react";
+import { Upload, CalendarDays, Table2, Grid3x3, FilePlus, RefreshCw, CheckCircle2, XCircle, Eye, Trash2, Link2, AlertTriangle, Clock, CalendarClock, Plus, CalendarPlus } from "lucide-react";
+
 
 type Bucket = "vencidos" | "prox7" | "prox30" | "futuros" | "cerrados";
 type QuickFilter = "operativo" | "vencidos" | "prox7" | "prox30" | "todos";
@@ -111,6 +113,15 @@ export default function Preventivos() {
   const [planesList, setPlanesList] = useState<PreventivoPlan[]>([]);
   const [nuevoRepetir, setNuevoRepetir] = useState<number>(1);
   const [nuevoIntervaloMeses, setNuevoIntervaloMeses] = useState<number>(1);
+
+  // Generador anual
+  const currentYear = Number(today.slice(0, 4));
+  const [openGenerar, setOpenGenerar] = useState(false);
+  const [genAnio, setGenAnio] = useState<number>(currentYear);
+  const [genPreview, setGenPreview] = useState<{ planes: number; planesSinFrecuencia: number; candidatos: number; existentes: number; nuevos: number } | null>(null);
+  const [genLoadingPreview, setGenLoadingPreview] = useState(false);
+  const [genSaving, setGenSaving] = useState(false);
+
 
   const refresh = async () => {
     setLoading(true);
@@ -264,8 +275,47 @@ export default function Preventivos() {
     }
   };
 
+  const abrirGenerarAnio = (anioInicial?: number) => {
+    const y = anioInicial ?? currentYear;
+    setGenAnio(y);
+    setGenPreview(null);
+    setOpenGenerar(true);
+    void cargarPreview(y);
+  };
+
+  const cargarPreview = async (y: number) => {
+    setGenLoadingPreview(true);
+    try {
+      const p = await previewGenerarAnio(y);
+      setGenPreview(p);
+    } catch (e) {
+      toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGenLoadingPreview(false);
+    }
+  };
+
+  const confirmarGenerar = async () => {
+    setGenSaving(true);
+    try {
+      const r = await generarAnio(genAnio);
+      toast({
+        title: `Generación ${genAnio} finalizada`,
+        description: `${r.creados} creados · ${r.omitidos} omitidos (ya existían)${r.planesSinFrecuencia ? ` · ${r.planesSinFrecuencia} planes sin frecuencia mensual` : ""}${r.errores.length ? ` · ${r.errores.length} errores` : ""}`,
+      });
+      setOpenGenerar(false);
+      setFiltroAnio(String(genAnio));
+      await refresh();
+    } catch (e) {
+      toast({ title: "Error generando", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGenSaving(false);
+    }
+  };
+
   return (
     <AppLayout>
+
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -286,6 +336,11 @@ export default function Preventivos() {
                 try { setPlanesList(await fetchPlanes()); } catch {}
               }}>
                 <Plus className="h-4 w-4" /> Nuevo preventivo
+              </Button>
+            )}
+            {canManagePreventivos(roles) && (
+              <Button size="sm" variant="secondary" onClick={() => abrirGenerarAnio(filtroAnio !== "__all" ? Number(filtroAnio) : currentYear)}>
+                <CalendarPlus className="h-4 w-4" /> Generar año
               </Button>
             )}
             {canImportPreventivos(roles) && (
@@ -389,7 +444,18 @@ export default function Preventivos() {
                   </thead>
                   <tbody>
                     {filtrado.length === 0 && (
-                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Sin preventivos en esta vista. Probá otro filtro o importá el Excel.</td></tr>
+                      <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">
+                        {filtroAnio !== "__all" ? (
+                          <div className="space-y-3">
+                            <div>No hay preventivos generados para {filtroAnio}.</div>
+                            {canManagePreventivos(roles) && (
+                              <Button size="sm" onClick={() => abrirGenerarAnio(Number(filtroAnio))}>
+                                <CalendarPlus className="h-4 w-4" /> Generar preventivos {filtroAnio}
+                              </Button>
+                            )}
+                          </div>
+                        ) : "Sin preventivos en esta vista. Probá otro filtro o importá el Excel."}
+                      </td></tr>
                     )}
                     {(quickFilter === "operativo" ? BUCKET_ORDER : ["__flat__" as const]).map((bk) => {
                       const items = bk === "__flat__" ? filtrado : agrupado[bk];
@@ -596,13 +662,10 @@ export default function Preventivos() {
               <div><Label>Repetir (nº)</Label><Input type="number" min={1} max={60} value={nuevoRepetir} onChange={(e) => setNuevoRepetir(Math.max(1, Number(e.target.value) || 1))} /></div>
               <div><Label>Cada (meses)</Label><Input type="number" min={1} max={24} value={nuevoIntervaloMeses} onChange={(e) => setNuevoIntervaloMeses(Math.max(1, Number(e.target.value) || 1))} /></div>
             </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <span className="text-xs text-muted-foreground self-center mr-1">Atajos:</span>
-              <Button type="button" size="sm" variant="secondary" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(12); setNuevoIntervaloMeses(1); }}>Generar 2026 (mensual)</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(6); setNuevoIntervaloMeses(2); }}>2026 bimestral</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(4); setNuevoIntervaloMeses(3); }}>2026 trimestral</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setNuevoFecha("2026-01-15"); setNuevoRepetir(2); setNuevoIntervaloMeses(6); }}>2026 semestral</Button>
-            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tip: para generar el cronograma completo de un año a partir de las plantillas activas usá el botón <strong>Generar año</strong> arriba.
+            </p>
+
             {nuevoRepetir > 1 && (
               <p className="text-xs text-muted-foreground">Se crearán {nuevoRepetir} preventivos, uno cada {nuevoIntervaloMeses} mes(es) desde {nuevoFecha || "la fecha elegida"}.</p>
             )}
@@ -657,7 +720,55 @@ export default function Preventivos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Generar año */}
+      <Dialog open={openGenerar} onOpenChange={(o) => !o && setOpenGenerar(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Generar preventivos anuales</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground text-xs">
+              Genera el cronograma completo del año seleccionado a partir de todas las plantillas activas con frecuencia mensual. Es idempotente: re-ejecutar no duplica preventivos ya generados.
+            </p>
+            <div>
+              <Label>Año a generar</Label>
+              <Select value={String(genAnio)} onValueChange={(v) => { const n = Number(v); setGenAnio(n); void cargarPreview(n); }}>
+                <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 7 }, (_, i) => currentYear - 1 + i).map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="rounded border p-3 bg-muted/30 space-y-1">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Vista previa</div>
+              {genLoadingPreview && <div className="text-xs text-muted-foreground">Calculando…</div>}
+              {!genLoadingPreview && genPreview && (
+                <>
+                  <div><strong>{genPreview.planes}</strong> plantillas activas con frecuencia mensual</div>
+                  <div><strong>{genPreview.candidatos}</strong> instancias a evaluar</div>
+                  <div className="text-emerald-700"><strong>{genPreview.nuevos}</strong> nuevas a crear</div>
+                  <div className="text-muted-foreground"><strong>{genPreview.existentes}</strong> ya existían (se omitirán)</div>
+                  {genPreview.planesSinFrecuencia > 0 && (
+                    <div className="text-amber-700 text-xs">{genPreview.planesSinFrecuencia} planes activos sin frecuencia mensual no se generarán.</div>
+                  )}
+                  {genPreview.planes === 0 && (
+                    <div className="text-amber-700 text-xs">No hay plantillas preventivas activas con frecuencia mensual.</div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenGenerar(false)}>Cancelar</Button>
+            <Button onClick={confirmarGenerar} disabled={genSaving || genLoadingPreview || !genPreview || genPreview.nuevos === 0}>
+              {genSaving ? "Generando…" : `Generar ${genPreview?.nuevos ?? 0} preventivos`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
+
   );
 }
 

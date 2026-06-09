@@ -302,12 +302,14 @@ export type Database = {
           activo: boolean
           created_at: string
           created_by: string | null
+          dia_preferido: number
           equipo: string
           equipo_codigo: string | null
           frecuencia_texto: string | null
           frecuencia_unidad: string | null
           frecuencia_valor: number | null
           id: string
+          mes_inicio: number
           source_file: string | null
           source_row: number | null
           source_sheet: string | null
@@ -320,12 +322,14 @@ export type Database = {
           activo?: boolean
           created_at?: string
           created_by?: string | null
+          dia_preferido?: number
           equipo: string
           equipo_codigo?: string | null
           frecuencia_texto?: string | null
           frecuencia_unidad?: string | null
           frecuencia_valor?: number | null
           id?: string
+          mes_inicio?: number
           source_file?: string | null
           source_row?: number | null
           source_sheet?: string | null
@@ -338,12 +342,14 @@ export type Database = {
           activo?: boolean
           created_at?: string
           created_by?: string | null
+          dia_preferido?: number
           equipo?: string
           equipo_codigo?: string | null
           frecuencia_texto?: string | null
           frecuencia_unidad?: string | null
           frecuencia_valor?: number | null
           id?: string
+          mes_inicio?: number
           source_file?: string | null
           source_row?: number | null
           source_sheet?: string | null
