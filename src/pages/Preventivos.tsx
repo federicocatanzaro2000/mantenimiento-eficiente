@@ -114,6 +114,15 @@ export default function Preventivos() {
   const [nuevoRepetir, setNuevoRepetir] = useState<number>(1);
   const [nuevoIntervaloMeses, setNuevoIntervaloMeses] = useState<number>(1);
 
+  // Generador anual
+  const currentYear = Number(today.slice(0, 4));
+  const [openGenerar, setOpenGenerar] = useState(false);
+  const [genAnio, setGenAnio] = useState<number>(currentYear);
+  const [genPreview, setGenPreview] = useState<{ planes: number; planesSinFrecuencia: number; candidatos: number; existentes: number; nuevos: number } | null>(null);
+  const [genLoadingPreview, setGenLoadingPreview] = useState(false);
+  const [genSaving, setGenSaving] = useState(false);
+
+
   const refresh = async () => {
     setLoading(true);
     try {
