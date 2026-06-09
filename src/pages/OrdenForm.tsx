@@ -190,24 +190,8 @@ export default function OrdenForm() {
         </div>
       )}
 
-      <div className="hidden print-show print:block mb-4 avoid-break">
-        <div className="flex items-center justify-between border-b-2 border-black pb-2 mb-2 gap-4">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="INCALFOOD" className="h-14 w-auto" />
-            <div>
-              <h1 className="text-xl font-bold">ORDEN DE MANTENIMIENTO</h1>
-              <p className="text-xs">Sistema de gestión industrial</p>
-            </div>
-          </div>
-          <div className="text-right text-xs">
-            <div><b>N°:</b> {orden.nroOrden}</div>
-            <div><b>Fecha:</b> {orden.fechaCreacion}</div>
-            <div><b>Estado:</b> {orden.estado} — <b>Prioridad:</b> {orden.prioridad}</div>
-            <div><b>Aprobado:</b> {orden.aprobado ? "SI" : "NO"}</div>
-            {isEdit && <div><b>Creado:</b> {nombreDe(orden.createdBy)} | <b>Mod:</b> {nombreDe(orden.updatedBy)}</div>}
-          </div>
-        </div>
-      </div>
+      <PrintableOrden orden={orden} />
+
 
       <div className="space-y-4">
         <Section title="1. Datos principales" seccion={1} canEdit={can1}>
