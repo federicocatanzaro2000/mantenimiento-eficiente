@@ -142,6 +142,18 @@ export default function FiltrosPage() {
     };
   }, [ordenes]);
 
+  // Nro orden options from existing ordenes
+  const optNroOrden = useMemo(() => {
+    const map = new Map<string, string>();
+    ordenes.forEach((o) => {
+      const n = String(o.nroOrden ?? "").trim();
+      if (n && n !== "0" && n !== "") map.set(n, n);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => Number(b[0]) - Number(a[0]))
+      .map(([value, label]) => ({ value, label }));
+  }, [ordenes]);
+
   // Person option lists
   const optSolicitante = useMemo(() => buildPersonOptions(people, "can_be_requester", hist.solicitante), [people, hist.solicitante]);
   const optTecnico = useMemo(() => buildPersonOptions(people, "can_be_technician", hist.tecnico), [people, hist.tecnico]);
