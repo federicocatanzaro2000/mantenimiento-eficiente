@@ -10,6 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { aplicarFiltros } from "@/lib/filterOrdenes";
 import { ArrowLeft, Filter as FilterIcon, RotateCcw } from "lucide-react";
+import { SearchSelect, SearchOption } from "@/components/SearchSelect";
+import {
+  listPeople, listSectors, listEquipment,
+  Person, Sector as SectorCat, Equipment, PersonField,
+} from "@/lib/catalogos/api";
+import { toast } from "sonner";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -55,6 +61,49 @@ function MultiCheck<T extends string>({ opciones, valores, onChange }: { opcione
   );
 }
 
+// Build combined options: catalog (active first) + historic values from ordenes
+function buildPersonOptions(people: Person[], field: PersonField, historic: Set<string>): SearchOption[] {
+  const opts: SearchOption[] = [];
+  const seen = new Set<string>();
+  people
+    .filter((p) => p[field])
+    .sort((a, b) => Number(b.active) - Number(a.active) || a.full_name.localeCompare(b.full_name))
+    .forEach((p) => {
+      const k = p.full_name.trim();
+      if (!k || seen.has(k.toLowerCase())) return;
+      seen.add(k.toLowerCase());
+      opts.push({ value: k, label: k, inactive: !p.active });
+    });
+  // historic snapshots not in catalog
+  historic.forEach((h) => {
+    const k = h.trim();
+    if (!k || seen.has(k.toLowerCase())) return;
+    seen.add(k.toLowerCase());
+    opts.push({ value: k, label: k, inactive: true });
+  });
+  return opts;
+}
+
+function buildSectorOptions(sectors: SectorCat[], historic: Set<string>): SearchOption[] {
+  const opts: SearchOption[] = [];
+  const seen = new Set<string>();
+  sectors
+    .sort((a, b) => Number(b.active) - Number(a.active) || a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+    .forEach((s) => {
+      const k = s.name.trim();
+      if (!k || seen.has(k.toLowerCase())) return;
+      seen.add(k.toLowerCase());
+      opts.push({ value: k, label: k, inactive: !s.active });
+    });
+  historic.forEach((h) => {
+    const k = h.trim();
+    if (!k || seen.has(k.toLowerCase())) return;
+    seen.add(k.toLowerCase());
+    opts.push({ value: k, label: k, inactive: true });
+  });
+  return opts;
+}
+
 export default function FiltrosPage() {
   const navigate = useNavigate();
   const { ordenes, filtros, setFiltros, resetFiltros, loaded, loadAll } = useOrdenesStore();
@@ -62,6 +111,135 @@ export default function FiltrosPage() {
   const [local, setLocal] = useState<Filtros>(filtros);
   const set = <K extends keyof Filtros>(k: K, v: Filtros[K]) => setLocal((p) => ({ ...p, [k]: v }));
   const preview = useMemo(() => aplicarFiltros(ordenes, local).length, [ordenes, local]);
+
+  // Catalogs
+  const [people, setPeople] = useState<Person[]>([]);
+  const [sectors, setSectors] = useState<SectorCat[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  useEffect(() => {
+    Promise.all([listPeople(), listSectors(), listEquipment()])
+      .then(([p, s, e]) => { setPeople(p); setSectors(s); setEquipment(e); })
+      .catch((err) => toast.error("Error cargando catálogos: " + err.message));
+  }, []);
+
+  // Historic snapshot sets from existing ordenes
+  const hist = useMemo(() => {
+    const collect = (key: keyof typeof ordenes[number]) => {
+      const s = new Set<string>();
+      ordenes.forEach((o) => { const v = (o as any)[key]; if (v && typeof v === "string") s.add(v); });
+      return s;
+    };
+    return {
+      solicitante: collect("solicitante"),
+      tecnico: collect("tecnicoResponsable"),
+      calidad: collect("responsableControlCalidad"),
+      elaboro: collect("elaboro"),
+      reviso: collect("reviso"),
+      aprobo: collect("aprobo"),
+      sector: collect("sector"),
+      codigoEquipo: collect("codigoEquipo"),
+      nombreEquipo: collect("nombreEquipo"),
+    };
+  }, [ordenes]);
+
+  // Person option lists
+  const optSolicitante = useMemo(() => buildPersonOptions(people, "can_be_requester", hist.solicitante), [people, hist.solicitante]);
+  const optTecnico = useMemo(() => buildPersonOptions(people, "can_be_technician", hist.tecnico), [people, hist.tecnico]);
+  const optCalidad = useMemo(() => buildPersonOptions(people, "can_be_quality_responsible", hist.calidad), [people, hist.calidad]);
+  const optElaboro = useMemo(() => buildPersonOptions(people, "can_be_created_by", hist.elaboro), [people, hist.elaboro]);
+  const optReviso = useMemo(() => buildPersonOptions(people, "can_be_reviewed_by", hist.reviso), [people, hist.reviso]);
+  const optAprobo = useMemo(() => buildPersonOptions(people, "can_be_approver", hist.aprobo), [people, hist.aprobo]);
+  const optSector = useMemo(() => buildSectorOptions(sectors, hist.sector), [sectors, hist.sector]);
+
+  // Equipment linked code <-> name
+  const equipOpts = useMemo(() => {
+    // active first, then inactive; build code & name option sets
+    const codeMap = new Map<string, { name: string; inactive: boolean }>();
+    const nameSet = new Map<string, boolean>(); // name -> inactive flag (false wins)
+    equipment.forEach((e) => {
+      const code = e.code.trim(); const name = e.name.trim();
+      if (code && !codeMap.has(code.toLowerCase())) codeMap.set(code.toLowerCase(), { name, inactive: !e.active });
+      if (name) {
+        const prev = nameSet.get(name.toLowerCase());
+        nameSet.set(name.toLowerCase(), prev === false ? false : !e.active);
+      }
+    });
+    // historic
+    hist.codigoEquipo.forEach((c) => {
+      const k = c.trim().toLowerCase();
+      if (k && !codeMap.has(k)) codeMap.set(k, { name: "", inactive: true });
+    });
+    hist.nombreEquipo.forEach((n) => {
+      const k = n.trim().toLowerCase();
+      if (k && !nameSet.has(k)) nameSet.set(k, true);
+    });
+
+    // Selected name -> filter codes
+    const selectedName = local.nombreEquipo.trim().toLowerCase();
+    const selectedCode = local.codigoEquipo.trim().toLowerCase();
+
+    const codeOptions: SearchOption[] = equipment
+      .filter((e) => !selectedName || e.name.trim().toLowerCase() === selectedName)
+      .sort((a, b) => Number(b.active) - Number(a.active) || a.code.localeCompare(b.code))
+      .map((e) => ({
+        value: e.code.trim(),
+        label: `${e.code.trim()} - ${e.name.trim()}`,
+        inactive: !e.active,
+      }));
+    // historic codes (no name match available -> include only when no name selected)
+    if (!selectedName) {
+      hist.codigoEquipo.forEach((c) => {
+        const k = c.trim();
+        if (k && !equipment.some((e) => e.code.trim().toLowerCase() === k.toLowerCase())) {
+          codeOptions.push({ value: k, label: k, inactive: true });
+        }
+      });
+    }
+
+    // Name options - unique names; if a code is selected, restrict to that code's name
+    const selectedCodeEntry = equipment.find((e) => e.code.trim().toLowerCase() === selectedCode);
+    const nameOptions: SearchOption[] = [];
+    const seenNames = new Set<string>();
+    const pushName = (n: string, inactive: boolean) => {
+      const k = n.trim(); if (!k || seenNames.has(k.toLowerCase())) return;
+      seenNames.add(k.toLowerCase()); nameOptions.push({ value: k, label: k, inactive });
+    };
+    if (selectedCodeEntry) {
+      pushName(selectedCodeEntry.name, !selectedCodeEntry.active);
+    } else {
+      equipment
+        .sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name))
+        .forEach((e) => pushName(e.name, !e.active));
+      hist.nombreEquipo.forEach((n) => pushName(n, true));
+    }
+
+    return { codeOptions, nameOptions };
+  }, [equipment, hist.codigoEquipo, hist.nombreEquipo, local.codigoEquipo, local.nombreEquipo]);
+
+  // When picking a code, auto-set name if empty/inconsistent
+  const onCodigoEquipo = (v: string) => {
+    const e = equipment.find((x) => x.code.trim().toLowerCase() === v.trim().toLowerCase());
+    setLocal((p) => {
+      const next = { ...p, codigoEquipo: v };
+      if (e) {
+        if (!p.nombreEquipo || p.nombreEquipo.trim().toLowerCase() !== e.name.trim().toLowerCase()) {
+          next.nombreEquipo = e.name.trim();
+        }
+      }
+      return next;
+    });
+  };
+  const onNombreEquipo = (v: string) => {
+    setLocal((p) => {
+      const next = { ...p, nombreEquipo: v };
+      // if current code's name doesn't match selected name, clear code
+      if (p.codigoEquipo) {
+        const e = equipment.find((x) => x.code.trim().toLowerCase() === p.codigoEquipo.trim().toLowerCase());
+        if (e && e.name.trim().toLowerCase() !== v.trim().toLowerCase()) next.codigoEquipo = "";
+      }
+      return next;
+    });
+  };
 
   const aplicar = () => { setFiltros(local); navigate("/resultados"); };
   const limpiar = () => { setLocal(filtrosVacios); resetFiltros(); };
@@ -102,9 +280,15 @@ export default function FiltrosPage() {
 
         <Section title="Datos generales">
           <F label="Nro. de orden"><Input value={local.nroOrden} onChange={(e) => set("nroOrden", e.target.value)} /></F>
-          <F label="Sector"><Input value={local.sector} onChange={(e) => set("sector", e.target.value)} /></F>
-          <F label="Técnico responsable"><Input value={local.tecnicoResponsable} onChange={(e) => set("tecnicoResponsable", e.target.value)} /></F>
-          <F label="Solicitante"><Input value={local.solicitante} onChange={(e) => set("solicitante", e.target.value)} /></F>
+          <F label="Sector">
+            <SearchSelect value={local.sector} onChange={(v) => set("sector", v)} options={optSector} placeholder="Seleccionar sector..." />
+          </F>
+          <F label="Técnico responsable">
+            <SearchSelect value={local.tecnicoResponsable} onChange={(v) => set("tecnicoResponsable", v)} options={optTecnico} placeholder="Seleccionar técnico..." />
+          </F>
+          <F label="Solicitante">
+            <SearchSelect value={local.solicitante} onChange={(v) => set("solicitante", v)} options={optSolicitante} placeholder="Seleccionar solicitante..." />
+          </F>
           <div className="lg:col-span-2"><F label="Tipo de orden">
             <MultiCheck<TipoOrden> opciones={["Preventivo","Correctivo","Edilicio","Limpieza"]}
               valores={local.tipoOrden} onChange={(v) => set("tipoOrden", v)} />
@@ -129,8 +313,12 @@ export default function FiltrosPage() {
 
         <Section title="Equipo y horas">
           <F label="Código documento"><Input value={local.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></F>
-          <F label="Código equipo"><Input value={local.codigoEquipo} onChange={(e) => set("codigoEquipo", e.target.value)} /></F>
-          <F label="Nombre equipo"><Input value={local.nombreEquipo} onChange={(e) => set("nombreEquipo", e.target.value)} /></F>
+          <F label="Código equipo">
+            <SearchSelect value={local.codigoEquipo} onChange={onCodigoEquipo} options={equipOpts.codeOptions} placeholder="Buscar código de equipo..." />
+          </F>
+          <F label="Nombre equipo">
+            <SearchSelect value={local.nombreEquipo} onChange={onNombreEquipo} options={equipOpts.nameOptions} placeholder="Buscar nombre de equipo..." />
+          </F>
           <F label="Recepción equipo">
             <Select value={local.estadoRecepcionEquipo} onValueChange={(v) => set("estadoRecepcionEquipo", v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -168,10 +356,18 @@ export default function FiltrosPage() {
               <SelectContent>{["Todos","SI","NO"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}</SelectContent>
             </Select>
           </F>
-          <F label="Responsable Calidad"><Input value={local.responsableControlCalidad} onChange={(e) => set("responsableControlCalidad", e.target.value)} /></F>
-          <F label="Elaboró"><Input value={local.elaboro} onChange={(e) => set("elaboro", e.target.value)} /></F>
-          <F label="Revisó"><Input value={local.reviso} onChange={(e) => set("reviso", e.target.value)} /></F>
-          <F label="Aprobó"><Input value={local.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></F>
+          <F label="Responsable Calidad">
+            <SearchSelect value={local.responsableControlCalidad} onChange={(v) => set("responsableControlCalidad", v)} options={optCalidad} placeholder="Seleccionar responsable..." />
+          </F>
+          <F label="Elaboró">
+            <SearchSelect value={local.elaboro} onChange={(v) => set("elaboro", v)} options={optElaboro} placeholder="Seleccionar quién elaboró..." />
+          </F>
+          <F label="Revisó">
+            <SearchSelect value={local.reviso} onChange={(v) => set("reviso", v)} options={optReviso} placeholder="Seleccionar quién revisó..." />
+          </F>
+          <F label="Aprobó">
+            <SearchSelect value={local.aprobo} onChange={(v) => set("aprobo", v)} options={optAprobo} placeholder="Seleccionar quién aprobó..." />
+          </F>
         </Section>
 
         <div className="flex justify-end gap-2 pt-2">
