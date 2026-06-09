@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import logo from "@/assets/logo-incalfood.png";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
+import { Combobox, ComboboxOption } from "@/components/Combobox";
+import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -73,6 +75,15 @@ export default function OrdenForm() {
   const isEdit = id && id !== "nueva";
   const [orden, setOrden] = useState<Orden | null>(null);
   const [saving, setSaving] = useState(false);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [equipos, setEquipos] = useState<Equipment[]>([]);
+
+  useEffect(() => {
+    Promise.all([listSectors(), listPeople(), listEquipment()])
+      .then(([s, p, e]) => { setSectors(s); setPeople(p); setEquipos(e); })
+      .catch(() => { /* silencioso, los campos seguirán mostrando snapshot */ });
+  }, []);
 
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
@@ -193,9 +204,24 @@ export default function OrdenForm() {
           <Field label="Fecha de creación" required>
             <Input type="date" value={orden.fechaCreacion} onChange={(e) => set("fechaCreacion", e.target.value)} />
           </Field>
-          <Field label="Solicitante"><Input value={orden.solicitante} onChange={(e) => set("solicitante", e.target.value)} /></Field>
-          <Field label="Técnico responsable"><Input value={orden.tecnicoResponsable} onChange={(e) => set("tecnicoResponsable", e.target.value)} /></Field>
-          <Field label="Sector" required><Input value={orden.sector} onChange={(e) => set("sector", e.target.value)} /></Field>
+          <Field label="Solicitante">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_requester).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.solicitante} onChange={(v) => set("solicitante", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Técnico responsable">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_technician).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.tecnicoResponsable} onChange={(v) => set("tecnicoResponsable", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Sector" required>
+            <Combobox
+              options={sectors.filter((s) => s.active).map<ComboboxOption>((s) => ({ value: s.name, label: s.name }))}
+              value={orden.sector} onChange={(v) => set("sector", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar sector..." />
+          </Field>
           <Field label="Tipo de orden" required>
             <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
@@ -254,8 +280,35 @@ export default function OrdenForm() {
 
         <Section title="3. Equipo y documentación" seccion={3} canEdit={can3}>
           <Field label="Código de documento"><Input value={orden.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></Field>
-          <Field label="Código de equipo"><Input value={orden.codigoEquipo} onChange={(e) => set("codigoEquipo", e.target.value)} /></Field>
-          <Field label="Nombre de equipo"><Input value={orden.nombreEquipo} onChange={(e) => set("nombreEquipo", e.target.value)} /></Field>
+          <Field label="Código de equipo">
+            <Combobox
+              options={equipos.filter((e) => e.active).map<ComboboxOption>((e) => ({ value: e.code, label: `${e.code} — ${e.name}`, keywords: e.name }))}
+              value={orden.codigoEquipo}
+              onChange={(v) => {
+                const eq = equipos.find((x) => x.code === v);
+                setOrden((o) => o ? ({ ...o, codigoEquipo: v, nombreEquipo: eq ? eq.name : o.nombreEquipo }) : o);
+              }}
+              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar código..." />
+          </Field>
+          <Field label="Nombre de equipo">
+            <Combobox
+              options={Array.from(new Set(equipos.filter((e) => e.active).map((e) => e.name))).sort().map<ComboboxOption>((n) => ({ value: n, label: n }))}
+              value={orden.nombreEquipo}
+              onChange={(v) => {
+                const matches = equipos.filter((e) => e.active && e.name === v);
+                setOrden((o) => {
+                  if (!o) return o;
+                  if (matches.length === 1) return { ...o, nombreEquipo: v, codigoEquipo: matches[0].code };
+                  // Múltiples: si el código actual no pertenece a ese nombre, limpiar
+                  const keepCode = matches.some((m) => m.code === o.codigoEquipo);
+                  return { ...o, nombreEquipo: v, codigoEquipo: keepCode ? o.codigoEquipo : "" };
+                });
+              }}
+              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar equipo..." />
+            {orden.nombreEquipo && equipos.filter((e) => e.active && e.name === orden.nombreEquipo).length > 1 && !orden.codigoEquipo && (
+              <p className="text-xs text-amber-600 mt-1">Hay varios códigos para este nombre. Elegí el código arriba.</p>
+            )}
+          </Field>
         </Section>
 
         <Section title="4. Recepción, limpieza y herramientas" seccion={4} canEdit={can4}>
@@ -328,11 +381,24 @@ export default function OrdenForm() {
             </div>
           </Field>
           <Field label="Responsable Control de Calidad">
-            <Input value={orden.responsableControlCalidad} onChange={(e) => set("responsableControlCalidad", e.target.value)} />
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_quality_responsible).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.responsableControlCalidad} onChange={(v) => set("responsableControlCalidad", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
           <div className="hidden lg:block" />
-          <Field label="Elaboró"><Input value={orden.elaboro} onChange={(e) => set("elaboro", e.target.value)} /></Field>
-          <Field label="Revisó"><Input value={orden.reviso} onChange={(e) => set("reviso", e.target.value)} /></Field>
+          <Field label="Elaboró">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_created_by).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.elaboro} onChange={(v) => set("elaboro", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Revisó">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_reviewed_by).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.reviso} onChange={(v) => set("reviso", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
           <Field label="Aprobó"><Input value={orden.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></Field>
         </Section>
 

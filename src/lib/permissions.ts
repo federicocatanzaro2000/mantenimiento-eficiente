@@ -45,3 +45,8 @@ export function canManagePreventivos(roles: AppRole[]): boolean {
 export function canUpdatePreventivoEstado(roles: AppRole[]): boolean {
   return roles.includes("supervisor") || roles.includes("operario");
 }
+
+export function canManageCatalogos(roles: AppRole[]): boolean {
+  return roles.includes("supervisor");
+}
+

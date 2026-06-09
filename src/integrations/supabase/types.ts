@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipment: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ordenes: {
         Row: {
           aprobado: boolean
@@ -135,6 +162,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      people: {
+        Row: {
+          active: boolean
+          can_be_created_by: boolean
+          can_be_quality_responsible: boolean
+          can_be_requester: boolean
+          can_be_reviewed_by: boolean
+          can_be_technician: boolean
+          created_at: string
+          full_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          can_be_created_by?: boolean
+          can_be_quality_responsible?: boolean
+          can_be_requester?: boolean
+          can_be_reviewed_by?: boolean
+          can_be_technician?: boolean
+          created_at?: string
+          full_name: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          can_be_created_by?: boolean
+          can_be_quality_responsible?: boolean
+          can_be_requester?: boolean
+          can_be_reviewed_by?: boolean
+          can_be_technician?: boolean
+          created_at?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       preventivos_alertas: {
         Row: {
@@ -384,6 +450,33 @@ export type Database = {
           nombre?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      sectors: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
