@@ -102,6 +102,7 @@ export default function Listado() {
                 <Th k="nroOrden">Nro. Orden</Th>
                 <Th k="fechaCreacion">Fecha Creación</Th>
                 <Th k="aprobadoLabel">Aprobado</Th>
+                <Th k="codigoEquipo">Código Equipo</Th>
                 <Th k="sector">Sector</Th>
                 <Th k="tipoOrden">Tipo</Th>
                 <Th k="estado">Estado</Th>
@@ -122,6 +123,7 @@ export default function Listado() {
                   <td className="font-mono font-semibold">{o.nroOrden}</td>
                   <td>{o.fechaCreacion}</td>
                   <td><AprobadoBadge aprobado={o.aprobado} /></td>
+                  <td>{o.codigoEquipo}</td>
                   <td>{o.sector}</td>
                   <td>{o.tipoOrden}</td>
                   <td><EstadoBadge estado={o.estado} /></td>
