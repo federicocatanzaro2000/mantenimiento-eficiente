@@ -313,8 +313,9 @@ export default function Preventivos() {
     }
   };
 
-
+  return (
     <AppLayout>
+
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
