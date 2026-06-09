@@ -1,197 +1,831 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend, LineChart, Line,
 } from "recharts";
-import { EstadoOrden, TipoOrden } from "@/types/orden";
+import { EstadoOrden, Prioridad, TipoOrden, Filtros, filtrosVacios, Orden } from "@/types/orden";
+import { SearchSelect, SearchOption } from "@/components/SearchSelect";
+import { listSectors, listPeople, listEquipment, Person, Sector, Equipment } from "@/lib/catalogos/api";
+import { listPreventives } from "@/lib/preventiveManual/api";
+import { PreventiveItem, effectiveStatus } from "@/lib/preventiveManual/types";
+import {
+  AlertTriangle, Clock, CheckCircle2, ListChecks, Activity, Flame, Timer, Wrench,
+  RefreshCw, RotateCcw, Printer, Download, ChevronRight, Eye,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const ESTADOS: EstadoOrden[] = ["Pendiente", "En proceso", "Cumplido"];
-const TIPOS: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
-
-const COLORS_ESTADO: Record<string, string> = {
-  "Pendiente": "hsl(45 93% 47%)",
-  "En proceso": "hsl(217 91% 60%)",
-  "Cumplido": "hsl(142 71% 45%)",
+// ───────────────────────────────── helpers ─────────────────────────────────
+const today = () => new Date().toISOString().slice(0, 10);
+const isoOffset = (days: number) => {
+  const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10);
 };
-const COLORS_TIPO = ["hsl(217 91% 60%)", "hsl(0 84% 60%)", "hsl(262 83% 58%)", "hsl(142 71% 45%)"];
-
-const inRange = (date: string, from: string, to: string) => {
-  if (!date) return false;
-  if (from && date < from) return false;
-  if (to && date > to) return false;
+const inRange = (d: string, from: string, to: string) => {
+  if (!d) return false;
+  if (from && d < from) return false;
+  if (to && d > to) return false;
   return true;
 };
+const fmtN = (n: number) => (Number.isFinite(n) ? n.toLocaleString("es-AR", { maximumFractionDigits: 1 }) : "0");
+const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
+const COLORS = {
+  pendiente: "hsl(42 95% 50%)",
+  proceso: "hsl(210 80% 48%)",
+  cumplido: "hsl(142 65% 38%)",
+  vencido: "hsl(0 75% 48%)",
+  cancelado: "hsl(215 15% 55%)",
+};
+const TIPO_COLORS = ["hsl(217 91% 60%)", "hsl(0 75% 48%)", "hsl(262 60% 50%)", "hsl(142 65% 38%)", "hsl(42 95% 50%)"];
+
+interface GFilters {
+  desde: string;
+  hasta: string;
+  sector: string;
+  tipo: TipoOrden | "";
+  estado: EstadoOrden | "";
+  prioridad: Prioridad | "";
+  tecnico: string;
+  solicitante: string;
+  codigoEquipo: string;
+  nombreEquipo: string;
+}
+
+const emptyG: GFilters = {
+  desde: isoOffset(-30), hasta: today(),
+  sector: "", tipo: "", estado: "", prioridad: "",
+  tecnico: "", solicitante: "", codigoEquipo: "", nombreEquipo: "",
+};
+
+// ───────────────────────────────── KPI card ─────────────────────────────────
+function Kpi({ title, value, sub, tone, icon: Icon, onClick }: {
+  title: string; value: React.ReactNode; sub?: React.ReactNode;
+  tone?: "default" | "warning" | "danger" | "success" | "info";
+  icon?: any; onClick?: () => void;
+}) {
+  const ring =
+    tone === "danger" ? "border-l-destructive" :
+    tone === "warning" ? "border-l-[hsl(var(--warning))]" :
+    tone === "success" ? "border-l-[hsl(var(--success))]" :
+    tone === "info" ? "border-l-[hsl(var(--info))]" : "border-l-primary";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`text-left bg-card border border-border rounded-md shadow-sm p-4 border-l-4 ${ring} ${onClick ? "hover:shadow-md hover:bg-accent/30 transition cursor-pointer" : "cursor-default"}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">{title}</div>
+        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+      </div>
+      <div className="text-2xl font-bold mt-1 tabular-nums text-foreground">{value}</div>
+      {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
+    </button>
+  );
+}
+
+function Section({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-md shadow-sm">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border bg-secondary/40 rounded-t-md">
+        <div>
+          <h3 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">{title}</h3>
+          {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        </div>
+        {action}
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+// ───────────────────────────────── main page ─────────────────────────────────
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const ordenes = useOrdenesStore((s) => s.ordenes);
   const loaded = useOrdenesStore((s) => s.loaded);
   const loadAll = useOrdenesStore((s) => s.loadAll);
+  const setFiltros = useOrdenesStore((s) => s.setFiltros);
+
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [equipos, setEquipos] = useState<Equipment[]>([]);
+  const [preventivos, setPreventivos] = useState<PreventiveItem[]>([]);
+  const [prevAvailable, setPrevAvailable] = useState<boolean>(true);
+
+  const [g, setG] = useState<GFilters>(emptyG);
+  const setF = <K extends keyof GFilters>(k: K, v: GFilters[K]) => setG((p) => ({ ...p, [k]: v }));
+
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const reload = async () => {
+    try {
+      const [s, p, e] = await Promise.all([listSectors(), listPeople(), listEquipment()]);
+      setSectors(s); setPeople(p); setEquipos(e);
+    } catch (err: any) { toast.error("Error cargando catálogos: " + err.message); }
+    try {
+      const prev = await listPreventives({ activeOnly: true });
+      setPreventivos(prev); setPrevAvailable(true);
+    } catch { setPrevAvailable(false); setPreventivos([]); }
+    await loadAll();
+  };
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, []);
 
-  const [estadoDesde, setEstadoDesde] = useState(monthAgo);
-  const [estadoHasta, setEstadoHasta] = useState(today);
-  const [tipoDesde, setTipoDesde] = useState(monthAgo);
-  const [tipoHasta, setTipoHasta] = useState(today);
+  // ───────── catalog options ─────────
+  const optSectores = useMemo<SearchOption[]>(() =>
+    sectors.filter((s) => s.active).map((s) => ({ value: s.name, label: s.name })), [sectors]);
+  const optTecnicos = useMemo<SearchOption[]>(() =>
+    people.filter((p) => p.can_be_technician).map((p) => ({ value: p.full_name, label: p.full_name, inactive: !p.active })), [people]);
+  const optSolicitantes = useMemo<SearchOption[]>(() =>
+    people.filter((p) => p.can_be_requester).map((p) => ({ value: p.full_name, label: p.full_name, inactive: !p.active })), [people]);
+  const optCodigos = useMemo<SearchOption[]>(() =>
+    equipos.filter((e) => e.active).map((e) => ({ value: e.code, label: `${e.code} — ${e.name}` })), [equipos]);
+  const optEquipos = useMemo<SearchOption[]>(() => {
+    const seen = new Set<string>(); const out: SearchOption[] = [];
+    equipos.filter((e) => e.active).forEach((e) => { if (!seen.has(e.name)) { seen.add(e.name); out.push({ value: e.name, label: e.name }); } });
+    return out;
+  }, [equipos]);
 
+  // ───────── apply filters ─────────
+  const filtered = useMemo<Orden[]>(() => {
+    const t = (v: string, q: string) => !q || (v ?? "").toLowerCase().includes(q.toLowerCase());
+    return ordenes.filter((o) => {
+      if (!inRange(o.fechaCreacion, g.desde, g.hasta)) return false;
+      if (g.sector && o.sector !== g.sector) return false;
+      if (g.tipo && o.tipoOrden !== g.tipo) return false;
+      if (g.estado && o.estado !== g.estado) return false;
+      if (g.prioridad && o.prioridad !== g.prioridad) return false;
+      if (g.tecnico && !t(o.tecnicoResponsable, g.tecnico)) return false;
+      if (g.solicitante && !t(o.solicitante, g.solicitante)) return false;
+      if (g.codigoEquipo && !t(o.codigoEquipo, g.codigoEquipo)) return false;
+      if (g.nombreEquipo && !t(o.nombreEquipo, g.nombreEquipo)) return false;
+      return true;
+    });
+  }, [ordenes, g]);
+
+  // ───────── drill-down ─────────
+  const goResultados = (patch: Partial<Filtros>) => {
+    const base: Filtros = { ...filtrosVacios };
+    base.fechaCreacionDesde = g.desde;
+    base.fechaCreacionHasta = g.hasta;
+    if (g.sector) base.sector = g.sector;
+    if (g.tipo) base.tipoOrden = [g.tipo];
+    if (g.estado) base.estado = [g.estado];
+    if (g.prioridad) base.prioridad = [g.prioridad];
+    if (g.tecnico) base.tecnicoResponsable = g.tecnico;
+    if (g.solicitante) base.solicitante = g.solicitante;
+    if (g.codigoEquipo) base.codigoEquipo = g.codigoEquipo;
+    if (g.nombreEquipo) base.nombreEquipo = g.nombreEquipo;
+    setFiltros({ ...base, ...patch });
+    navigate("/resultados");
+  };
+
+  // ───────── computations ─────────
+  const todayISO = today();
+  const isClosed = (o: Orden) => o.estado === "Cumplido";
+  const isOpen = (o: Orden) => o.estado === "Pendiente" || o.estado === "En proceso";
+  const isOverdue = (o: Orden) => !!o.fechaLimiteRealizacion && o.fechaLimiteRealizacion < todayISO && !isClosed(o);
+  const venceHoy = (o: Orden) => o.fechaLimiteRealizacion === todayISO && !isClosed(o);
+  const vence7 = (o: Orden) => !!o.fechaLimiteRealizacion && o.fechaLimiteRealizacion >= todayISO && o.fechaLimiteRealizacion <= isoOffset(7) && !isClosed(o);
+
+  const kpis = useMemo(() => {
+    const total = filtered.length;
+    const abiertas = filtered.filter(isOpen).length;
+    const cumplidas = filtered.filter(isClosed).length;
+    const vencidas = filtered.filter(isOverdue).length;
+    const altaAbiertas = filtered.filter((o) => o.prioridad === "Alta" && isOpen(o)).length;
+    const enTermino = filtered.filter((o) => isClosed(o) && o.fechaFinalizacion && o.fechaLimiteRealizacion && o.fechaFinalizacion <= o.fechaLimiteRealizacion).length;
+    const cumplPct = cumplidas ? Math.round((enTermino / cumplidas) * 100) : 0;
+    const hPres = filtered.reduce((s, o) => s + (Number(o.horasPresupuestadas) || 0), 0);
+    const hReal = filtered.reduce((s, o) => s + (Number(o.horasReales) || 0), 0);
+    const desv = hReal - hPres;
+    const desvPct = hPres > 0 ? Math.round((desv / hPres) * 100) : 0;
+    return { total, abiertas, cumplidas, vencidas, altaAbiertas, cumplPct, hPres, hReal, desv, desvPct };
+  }, [filtered]);
+
+  // estado distribution
   const dataEstado = useMemo(() => {
-    const filtered = ordenes.filter((o) => inRange(o.fechaCreacion, estadoDesde, estadoHasta));
-    return ESTADOS.map((estado) => ({
-      estado,
-      cantidad: filtered.filter((o) => o.estado === estado).length,
+    const estados: EstadoOrden[] = ["Pendiente", "En proceso", "Cumplido"];
+    return estados.map((e) => ({
+      estado: e,
+      cantidad: filtered.filter((o) => o.estado === e).length,
+      color: e === "Pendiente" ? COLORS.pendiente : e === "En proceso" ? COLORS.proceso : COLORS.cumplido,
     }));
-  }, [ordenes, estadoDesde, estadoHasta]);
+  }, [filtered]);
 
-  const totalEstado = dataEstado.reduce((s, d) => s + d.cantidad, 0);
-
+  // por tipo / sector / prioridad
   const dataTipo = useMemo(() => {
-    const filtered = ordenes.filter((o) => inRange(o.fechaCreacion, tipoDesde, tipoHasta));
-    return TIPOS.map((tipo) => ({
-      tipo,
-      cantidad: filtered.filter((o) => o.tipoOrden === tipo).length,
-    }));
-  }, [ordenes, tipoDesde, tipoHasta]);
+    const tipos: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
+    return tipos.map((t) => ({ tipo: t, cantidad: filtered.filter((o) => o.tipoOrden === t).length }));
+  }, [filtered]);
 
-  const totalTipo = dataTipo.reduce((s, d) => s + d.cantidad, 0);
+  const dataSector = useMemo(() => {
+    const m = new Map<string, number>();
+    filtered.forEach((o) => { const k = o.sector || "Sin sector"; m.set(k, (m.get(k) || 0) + 1); });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([sector, cantidad]) => ({ sector, cantidad }));
+  }, [filtered]);
+
+  const dataPrioridad = useMemo(() => {
+    const ps: Prioridad[] = ["Alta", "Media", "Baja"];
+    return ps.map((p) => ({ prioridad: p, cantidad: filtered.filter((o) => o.prioridad === p).length }));
+  }, [filtered]);
+
+  // top equipos
+  const topEquipos = useMemo(() => {
+    const m = new Map<string, { codigo: string; nombre: string; total: number; abiertas: number; vencidas: number; horas: number; ultima: string }>();
+    filtered.forEach((o) => {
+      const k = o.codigoEquipo || o.nombreEquipo || "Sin equipo";
+      const cur = m.get(k) || { codigo: o.codigoEquipo || "", nombre: o.nombreEquipo || "Sin equipo", total: 0, abiertas: 0, vencidas: 0, horas: 0, ultima: "" };
+      cur.total += 1;
+      if (isOpen(o)) cur.abiertas += 1;
+      if (isOverdue(o)) cur.vencidas += 1;
+      cur.horas += Number(o.horasReales) || 0;
+      if (o.fechaCreacion > cur.ultima) cur.ultima = o.fechaCreacion;
+      m.set(k, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+  }, [filtered]);
+
+  // carga por técnico
+  const cargaTecnico = useMemo(() => {
+    const m = new Map<string, { tecnico: string; total: number; abiertas: number; vencidas: number; cumplidas: number; enTermino: number; hPres: number; hReal: number }>();
+    filtered.forEach((o) => {
+      const k = o.tecnicoResponsable || "Sin asignar";
+      const cur = m.get(k) || { tecnico: k, total: 0, abiertas: 0, vencidas: 0, cumplidas: 0, enTermino: 0, hPres: 0, hReal: 0 };
+      cur.total += 1;
+      if (isOpen(o)) cur.abiertas += 1;
+      if (isOverdue(o)) cur.vencidas += 1;
+      if (isClosed(o)) {
+        cur.cumplidas += 1;
+        if (o.fechaFinalizacion && o.fechaLimiteRealizacion && o.fechaFinalizacion <= o.fechaLimiteRealizacion) cur.enTermino += 1;
+      }
+      cur.hPres += Number(o.horasPresupuestadas) || 0;
+      cur.hReal += Number(o.horasReales) || 0;
+      m.set(k, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => b.abiertas - a.abiertas);
+  }, [filtered]);
+
+  // alertas tabla
+  const alertasOrdenes = useMemo(() => {
+    const score = (o: Orden) => {
+      const lim = o.fechaLimiteRealizacion || "9999-12-31";
+      const diff = Math.floor((new Date(lim).getTime() - new Date(todayISO).getTime()) / 86400000);
+      const prio = o.prioridad === "Alta" ? 0 : o.prioridad === "Media" ? 1 : 2;
+      return [prio, diff] as [number, number];
+    };
+    return filtered
+      .filter((o) => isOpen(o) && (isOverdue(o) || venceHoy(o) || vence7(o) || o.prioridad === "Alta"))
+      .sort((a, b) => { const sa = score(a), sb = score(b); return sa[0] - sb[0] || sa[1] - sb[1]; })
+      .slice(0, 20);
+  }, [filtered]);
+
+  // horas pres vs real por tipo
+  const horasPorTipo = useMemo(() => {
+    const tipos: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
+    return tipos.map((t) => {
+      const arr = filtered.filter((o) => o.tipoOrden === t);
+      return {
+        tipo: t,
+        pres: arr.reduce((s, o) => s + (Number(o.horasPresupuestadas) || 0), 0),
+        real: arr.reduce((s, o) => s + (Number(o.horasReales) || 0), 0),
+      };
+    });
+  }, [filtered]);
+
+  // mayor desvío
+  const mayoresDesvios = useMemo(() => {
+    return filtered
+      .filter((o) => Number(o.horasPresupuestadas) > 0 && Number(o.horasReales) > 0)
+      .map((o) => {
+        const desv = Number(o.horasReales) - Number(o.horasPresupuestadas);
+        const pctD = Math.round((desv / Number(o.horasPresupuestadas)) * 100);
+        return { o, desv, pctD };
+      })
+      .sort((a, b) => b.desv - a.desv)
+      .slice(0, 10);
+  }, [filtered]);
+
+  // calidad
+  const calidad = useMemo(() => {
+    const t = filtered.length;
+    const aprob = filtered.filter((o) => o.aprobado).length;
+    const cc = filtered.filter((o) => o.controlLiberacionCalidad).length;
+    const noApto = filtered.filter((o) => o.estadoRecepcionEquipo === "NO APTO").length;
+    const sinResp = filtered.filter((o) => !o.responsableControlCalidad?.trim()).length;
+    const sinFlujo = filtered.filter((o) => !o.elaboro || !o.reviso || !o.aprobo).length;
+    return { t, aprob, cc, noApto, sinResp, sinFlujo };
+  }, [filtered]);
+
+  // calidad de datos
+  const datos = useMemo(() => ({
+    sinTecnico: filtered.filter((o) => !o.tecnicoResponsable?.trim()).length,
+    sinEquipo: filtered.filter((o) => !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()).length,
+    sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
+    sinPres: filtered.filter((o) => !o.horasPresupuestadas).length,
+    sinTipo: filtered.filter((o) => !o.tipoOrden).length,
+    sinSector: filtered.filter((o) => !o.sector?.trim()).length,
+  }), [filtered]);
+
+  // backlog
+  const backlog = useMemo(() => {
+    const abiertas = filtered.filter(isOpen);
+    const buckets = { "0-7": 0, "8-15": 0, "16-30": 0, "+30": 0 };
+    abiertas.forEach((o) => {
+      const days = Math.floor((new Date(todayISO).getTime() - new Date(o.fechaCreacion || todayISO).getTime()) / 86400000);
+      if (days <= 7) buckets["0-7"]++;
+      else if (days <= 15) buckets["8-15"]++;
+      else if (days <= 30) buckets["16-30"]++;
+      else buckets["+30"]++;
+    });
+    return { abiertas, buckets };
+  }, [filtered]);
+
+  // evolución mensual
+  const evolucion = useMemo(() => {
+    const m = new Map<string, { mes: string; creadas: number; cumplidas: number; vencidas: number; horas: number }>();
+    filtered.forEach((o) => {
+      const k = (o.fechaCreacion || "").slice(0, 7);
+      if (!k) return;
+      const cur = m.get(k) || { mes: k, creadas: 0, cumplidas: 0, vencidas: 0, horas: 0 };
+      cur.creadas += 1;
+      if (isClosed(o)) cur.cumplidas += 1;
+      if (isOverdue(o)) cur.vencidas += 1;
+      cur.horas += Number(o.horasReales) || 0;
+      m.set(k, cur);
+    });
+    return Array.from(m.values()).sort((a, b) => a.mes.localeCompare(b.mes));
+  }, [filtered]);
+
+  // preventivos del período
+  const prevs = useMemo(() => {
+    const ps = preventivos.filter((p) => inRange(p.scheduled_date, g.desde, g.hasta));
+    const proximos7 = preventivos.filter((p) => p.scheduled_date >= todayISO && p.scheduled_date <= isoOffset(7));
+    const proximos30 = preventivos.filter((p) => p.scheduled_date >= todayISO && p.scheduled_date <= isoOffset(30));
+    const vencidos = preventivos.filter((p) => effectiveStatus(p, todayISO) === "Vencido");
+    const conOIT = preventivos.filter((p) => !!p.work_order_id).length;
+    const sinOIT = preventivos.filter((p) => !p.work_order_id).length;
+    const realizados = preventivos.filter((p) => p.status === "Realizado").length;
+    const cancelados = preventivos.filter((p) => p.status === "Cancelado").length;
+    return { total: ps.length, proximos7, proximos30, vencidos, conOIT, sinOIT, realizados, cancelados };
+  }, [preventivos, g.desde, g.hasta, todayISO]);
+
+  const proxPreventivos = useMemo(() =>
+    [...preventivos]
+      .filter((p) => effectiveStatus(p, todayISO) === "Vencido" || (p.scheduled_date >= todayISO && p.scheduled_date <= isoOffset(30)))
+      .sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date))
+      .slice(0, 15),
+  [preventivos, todayISO]);
+
+  // ───────── presets ─────────
+  const setPreset = (key: string) => {
+    const now = new Date();
+    const y = now.getFullYear(), mo = now.getMonth();
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    if (key === "30") setG((p) => ({ ...p, desde: isoOffset(-30), hasta: today() }));
+    else if (key === "mes") setG((p) => ({ ...p, desde: fmt(new Date(y, mo, 1)), hasta: today() }));
+    else if (key === "mes-1") setG((p) => ({ ...p, desde: fmt(new Date(y, mo - 1, 1)), hasta: fmt(new Date(y, mo, 0)) }));
+    else if (key === "anio") setG((p) => ({ ...p, desde: fmt(new Date(y, 0, 1)), hasta: today() }));
+    else if (key === "anio-1") setG((p) => ({ ...p, desde: fmt(new Date(y - 1, 0, 1)), hasta: fmt(new Date(y - 1, 11, 31)) }));
+  };
+
+  // ───────── export ─────────
+  const exportCSV = () => {
+    const headers = ["Nro", "F.Creación", "F.Límite", "Estado", "Prioridad", "Tipo", "Sector", "Equipo", "Técnico", "Hs.Pres", "Hs.Real"];
+    const rows = filtered.map((o) => [
+      o.nroOrden, o.fechaCreacion, o.fechaLimiteRealizacion, o.estado, o.prioridad, o.tipoOrden, o.sector,
+      `${o.codigoEquipo} ${o.nombreEquipo}`.trim(), o.tecnicoResponsable, o.horasPresupuestadas, o.horasReales,
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob); const a = document.createElement("a");
+    a.href = url; a.download = `INCALFOOD_Dashboard_${today()}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+
+  const diasHasta = (d: string) => Math.floor((new Date(d).getTime() - new Date(todayISO).getTime()) / 86400000);
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
-          <p className="text-sm text-muted-foreground">Resumen de órdenes por estado y por tipo.</p>
+      <div className="space-y-4">
+        {/* header */}
+        <div className="flex flex-wrap items-end justify-between gap-3 no-print">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Dashboard Operativo</h2>
+            <p className="text-sm text-muted-foreground">Mantenimiento — Incalfood. Datos del período {g.desde || "—"} → {g.hasta || "hoy"}.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={reload} className="gap-1.5"><RefreshCw className="h-4 w-4" />Refrescar</Button>
+            <Button variant="outline" size="sm" onClick={() => setG(emptyG)} className="gap-1.5"><RotateCcw className="h-4 w-4" />Limpiar</Button>
+            <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5"><Download className="h-4 w-4" />Exportar</Button>
+            <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5"><Printer className="h-4 w-4" />Imprimir</Button>
+          </div>
         </div>
 
-        {/* Estados */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <CardTitle className="text-lg">Órdenes por Estado</CardTitle>
-              <div className="flex flex-wrap gap-3 items-end">
-                <div>
-                  <Label className="text-xs">Desde</Label>
-                  <Input type="date" value={estadoDesde} onChange={(e) => setEstadoDesde(e.target.value)} className="h-9 w-40" />
-                </div>
-                <div>
-                  <Label className="text-xs">Hasta</Label>
-                  <Input type="date" value={estadoHasta} onChange={(e) => setEstadoHasta(e.target.value)} className="h-9 w-40" />
-                </div>
-              </div>
+        {/* filtros */}
+        <Section title="Filtros globales" subtitle="Se aplican a todo el tablero">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {[
+              { k: "30", l: "Últimos 30 días" }, { k: "mes", l: "Este mes" }, { k: "mes-1", l: "Mes anterior" },
+              { k: "anio", l: "Este año" }, { k: "anio-1", l: "Año anterior" },
+            ].map((p) => (
+              <Button key={p.k} variant="outline" size="sm" onClick={() => setPreset(p.k)}>{p.l}</Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div><Label className="text-xs">Desde</Label><Input type="date" value={g.desde} onChange={(e) => setF("desde", e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Hasta</Label><Input type="date" value={g.hasta} onChange={(e) => setF("hasta", e.target.value)} className="h-9" /></div>
+            <div><Label className="text-xs">Sector</Label><SearchSelect value={g.sector} onChange={(v) => setF("sector", v)} options={optSectores} placeholder="Todos" /></div>
+            <div>
+              <Label className="text-xs">Tipo</Label>
+              <SearchSelect value={g.tipo} onChange={(v) => setF("tipo", v as any)}
+                options={[{ value: "Preventivo", label: "Preventivo" }, { value: "Correctivo", label: "Correctivo" }, { value: "Edilicio", label: "Edilicio" }, { value: "Limpieza", label: "Limpieza" }]}
+                placeholder="Todos" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              {dataEstado.map((d) => (
-                <div key={d.estado} className="rounded-md border p-4 flex items-center justify-between" style={{ borderLeft: `4px solid ${COLORS_ESTADO[d.estado]}` }}>
-                  <div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">{d.estado}</div>
-                    <div className="text-3xl font-bold">{d.cantidad}</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {totalEstado ? Math.round((d.cantidad / totalEstado) * 100) : 0}%
-                  </div>
-                </div>
-              ))}
+            <div>
+              <Label className="text-xs">Estado</Label>
+              <SearchSelect value={g.estado} onChange={(v) => setF("estado", v as any)}
+                options={[{ value: "Pendiente", label: "Pendiente" }, { value: "En proceso", label: "En proceso" }, { value: "Cumplido", label: "Cumplido" }]}
+                placeholder="Todos" />
             </div>
-            <div className="h-72 w-full">
+            <div>
+              <Label className="text-xs">Prioridad</Label>
+              <SearchSelect value={g.prioridad} onChange={(v) => setF("prioridad", v as any)}
+                options={[{ value: "Alta", label: "Alta" }, { value: "Media", label: "Media" }, { value: "Baja", label: "Baja" }]}
+                placeholder="Todas" />
+            </div>
+            <div><Label className="text-xs">Técnico responsable</Label><SearchSelect value={g.tecnico} onChange={(v) => setF("tecnico", v)} options={optTecnicos} placeholder="Todos" /></div>
+            <div><Label className="text-xs">Solicitante</Label><SearchSelect value={g.solicitante} onChange={(v) => setF("solicitante", v)} options={optSolicitantes} placeholder="Todos" /></div>
+            <div><Label className="text-xs">Código equipo</Label><SearchSelect value={g.codigoEquipo} onChange={(v) => setF("codigoEquipo", v)} options={optCodigos} placeholder="Todos" /></div>
+            <div><Label className="text-xs">Nombre equipo</Label><SearchSelect value={g.nombreEquipo} onChange={(v) => setF("nombreEquipo", v)} options={optEquipos} placeholder="Todos" /></div>
+          </div>
+        </Section>
+
+        {/* KPIs ejecutivos */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <Kpi title="Total OITs" value={fmtN(kpis.total)} icon={ListChecks} onClick={() => goResultados({})} />
+          <Kpi title="Abiertas" value={fmtN(kpis.abiertas)} sub={`${pct(kpis.abiertas, kpis.total)}% del total`} tone="info" icon={Activity}
+            onClick={() => goResultados({ estado: ["Pendiente", "En proceso"] })} />
+          <Kpi title="Vencidas" value={fmtN(kpis.vencidas)} sub={`${pct(kpis.vencidas, kpis.abiertas)}% de abiertas`} tone="danger" icon={AlertTriangle}
+            onClick={() => goResultados({ estado: ["Pendiente", "En proceso"], fechaLimiteHasta: isoOffset(-1) })} />
+          <Kpi title="Cumplidas" value={fmtN(kpis.cumplidas)} sub={`${pct(kpis.cumplidas, kpis.total)}% del total`} tone="success" icon={CheckCircle2}
+            onClick={() => goResultados({ estado: ["Cumplido"] })} />
+          <Kpi title="Cumplimiento en término" value={`${kpis.cumplPct}%`} sub={`Sobre ${kpis.cumplidas} cumplidas`} tone="success" icon={Timer} />
+          <Kpi title="Alta prioridad abiertas" value={fmtN(kpis.altaAbiertas)} tone="danger" icon={Flame}
+            onClick={() => goResultados({ prioridad: ["Alta"], estado: ["Pendiente", "En proceso"] })} />
+          <Kpi title="Horas presupuestadas" value={fmtN(kpis.hPres)} icon={Clock} />
+          <Kpi title="Horas reales" value={fmtN(kpis.hReal)} icon={Clock} />
+          <Kpi title="Desvío de horas" value={`${kpis.desv >= 0 ? "+" : ""}${fmtN(kpis.desv)}`}
+            sub={`${kpis.desvPct >= 0 ? "+" : ""}${kpis.desvPct}% vs presupuestadas`}
+            tone={kpis.desv > 0 ? "danger" : kpis.desv < 0 ? "success" : "default"} icon={Activity} />
+          <Kpi title="Preventivos próx. 7 días" value={prevAvailable ? fmtN(prevs.proximos7.length) : "—"}
+            sub={prevAvailable ? `${prevs.vencidos.length} vencidos` : "Sin módulo"} tone={prevs.vencidos.length > 0 ? "warning" : "default"} icon={Wrench}
+            onClick={prevAvailable ? () => navigate("/preventivos") : undefined} />
+        </div>
+
+        {/* alertas operativas */}
+        <Section title="Alertas operativas" subtitle="Órdenes que requieren atención inmediata">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <Kpi title="Vencidas" value={kpis.vencidas} tone="danger"
+              onClick={() => goResultados({ estado: ["Pendiente", "En proceso"], fechaLimiteHasta: isoOffset(-1) })} />
+            <Kpi title="Vencen hoy" value={filtered.filter(venceHoy).length} tone="warning"
+              onClick={() => goResultados({ estado: ["Pendiente", "En proceso"], fechaLimiteDesde: todayISO, fechaLimiteHasta: todayISO })} />
+            <Kpi title="Vencen en 7 días" value={filtered.filter(vence7).length} tone="warning"
+              onClick={() => goResultados({ estado: ["Pendiente", "En proceso"], fechaLimiteDesde: todayISO, fechaLimiteHasta: isoOffset(7) })} />
+            <Kpi title="Alta prioridad pendientes" value={kpis.altaAbiertas} tone="danger"
+              onClick={() => goResultados({ prioridad: ["Alta"], estado: ["Pendiente", "En proceso"] })} />
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary text-secondary-foreground">
+                <tr>
+                  {["Nro", "F. Límite", "Días", "Estado", "Prioridad", "Sector", "Equipo", "Técnico", ""].map((h, i) =>
+                    <th key={i} className="text-left p-2 text-xs font-medium uppercase tracking-wide">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {alertasOrdenes.length === 0 && <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Sin alertas en el período</td></tr>}
+                {alertasOrdenes.map((o) => {
+                  const d = o.fechaLimiteRealizacion ? diasHasta(o.fechaLimiteRealizacion) : null;
+                  return (
+                    <tr key={o.id} className="border-t border-border hover:bg-accent/30">
+                      <td className="p-2 font-mono font-semibold">{o.nroOrden}</td>
+                      <td className="p-2">{o.fechaLimiteRealizacion || "—"}</td>
+                      <td className={`p-2 font-medium ${d != null && d < 0 ? "text-destructive" : d != null && d <= 7 ? "text-[hsl(var(--warning))]" : ""}`}>
+                        {d == null ? "—" : d < 0 ? `${Math.abs(d)}d vencida` : d === 0 ? "Hoy" : `en ${d}d`}
+                      </td>
+                      <td className="p-2">{o.estado}</td>
+                      <td className="p-2">{o.prioridad}</td>
+                      <td className="p-2">{o.sector || "—"}</td>
+                      <td className="p-2">{[o.codigoEquipo, o.nombreEquipo].filter(Boolean).join(" — ") || "—"}</td>
+                      <td className="p-2">{o.tecnicoResponsable || "Sin asignar"}</td>
+                      <td className="p-2"><Button size="icon" variant="ghost" onClick={() => navigate(`/orden/${o.id}`)}><Eye className="h-4 w-4" /></Button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        {/* estado + tipo + prioridad */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Section title="Estado de órdenes">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dataEstado}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="estado" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <XAxis dataKey="estado" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
                   <Tooltip />
-                  <Bar dataKey="cantidad" radius={[4, 4, 0, 0]}>
-                    {dataEstado.map((d) => (
-                      <Cell key={d.estado} fill={COLORS_ESTADO[d.estado]} />
-                    ))}
+                  <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} onClick={(d: any) => goResultados({ estado: [d.estado] })} cursor="pointer">
+                    {dataEstado.map((d) => <Cell key={d.estado} fill={d.color} />)}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="text-xs text-muted-foreground mt-2">Total en el rango: <strong>{totalEstado}</strong> órdenes</div>
-          </CardContent>
-        </Card>
+          </Section>
+          <Section title="Por tipo de orden">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={dataTipo.filter((d) => d.cantidad > 0)} dataKey="cantidad" nameKey="tipo" outerRadius={85} label
+                    onClick={(d: any) => goResultados({ tipoOrden: [d.tipo] })} cursor="pointer">
+                    {dataTipo.map((_, i) => <Cell key={i} fill={TIPO_COLORS[i % TIPO_COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip /><Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Section>
+          <Section title="Por prioridad">
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dataPrioridad}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="prioridad" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <Tooltip />
+                  <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} onClick={(d: any) => goResultados({ prioridad: [d.prioridad] })} cursor="pointer">
+                    <Cell fill="hsl(0 75% 48%)" /><Cell fill="hsl(42 95% 50%)" /><Cell fill="hsl(215 15% 55%)" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Section>
+        </div>
 
-        {/* Tipos */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <CardTitle className="text-lg">Órdenes por Tipo</CardTitle>
-              <div className="flex flex-wrap gap-3 items-end">
-                <div>
-                  <Label className="text-xs">Desde</Label>
-                  <Input type="date" value={tipoDesde} onChange={(e) => setTipoDesde(e.target.value)} className="h-9 w-40" />
-                </div>
-                <div>
-                  <Label className="text-xs">Hasta</Label>
-                  <Input type="date" value={tipoHasta} onChange={(e) => setTipoHasta(e.target.value)} className="h-9 w-40" />
-                </div>
-              </div>
+        {/* sector + backlog */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Section title="Órdenes por sector">
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dataSector} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <YAxis type="category" dataKey="sector" stroke="hsl(var(--muted-foreground))" fontSize={11} width={120} />
+                  <Tooltip />
+                  <Bar dataKey="cantidad" fill="hsl(215 60% 45%)" radius={[0, 4, 4, 0]} cursor="pointer"
+                    onClick={(d: any) => goResultados({ sector: d.sector })} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dataTipo} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis type="category" dataKey="tipo" stroke="hsl(var(--muted-foreground))" fontSize={12} width={90} />
-                    <Tooltip />
-                    <Bar dataKey="cantidad" radius={[0, 4, 4, 0]}>
-                      {dataTipo.map((_, i) => (
-                        <Cell key={i} fill={COLORS_TIPO[i % COLORS_TIPO.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={dataTipo.filter((d) => d.cantidad > 0)} dataKey="cantidad" nameKey="tipo" outerRadius={100} label>
-                      {dataTipo.map((_, i) => (
-                        <Cell key={i} fill={COLORS_TIPO[i % COLORS_TIPO.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+          </Section>
+          <Section title="Backlog (OITs abiertas)" subtitle={`Total: ${backlog.abiertas.length}`}>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {Object.entries(backlog.buckets).map(([k, v]) => (
+                <div key={k} className="border border-border rounded-md p-3 text-center bg-secondary/30">
+                  <div className="text-xs text-muted-foreground">{k} días</div>
+                  <div className="text-2xl font-bold tabular-nums">{v}</div>
+                </div>
+              ))}
             </div>
-            <table className="w-full text-sm mt-4 border">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left p-2 border-b">Tipo</th>
-                  <th className="text-right p-2 border-b w-32">Cantidad</th>
-                  <th className="text-right p-2 border-b w-32">%</th>
-                </tr>
+            <div className="overflow-x-auto max-h-60 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary sticky top-0">
+                  <tr>{["Nro", "F.Creación", "Días", "Prioridad", "Sector", "Técnico"].map((h) =>
+                    <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {backlog.abiertas.slice(0, 30).map((o) => {
+                    const days = Math.floor((new Date(todayISO).getTime() - new Date(o.fechaCreacion || todayISO).getTime()) / 86400000);
+                    return (
+                      <tr key={o.id} className="border-t border-border hover:bg-accent/30 cursor-pointer" onClick={() => navigate(`/orden/${o.id}`)}>
+                        <td className="p-2 font-mono">{o.nroOrden}</td><td className="p-2">{o.fechaCreacion}</td>
+                        <td className="p-2">{days}</td><td className="p-2">{o.prioridad}</td>
+                        <td className="p-2">{o.sector || "—"}</td><td className="p-2">{o.tecnicoResponsable || "Sin asignar"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        </div>
+
+        {/* equipos críticos */}
+        <Section title="Equipos con mayor intervención (Top 10)" subtitle="Identifica máquinas problemáticas">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary">
+                <tr>{["Código", "Equipo", "OITs", "Abiertas", "Vencidas", "Hs. reales", "Última OIT", ""].map((h) =>
+                  <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
               </thead>
               <tbody>
-                {dataTipo.map((d, i) => (
-                  <tr key={d.tipo} className={i % 2 ? "bg-muted/30" : ""}>
-                    <td className="p-2 border-b">{d.tipo}</td>
-                    <td className="p-2 border-b text-right font-medium">{d.cantidad}</td>
-                    <td className="p-2 border-b text-right">{totalTipo ? Math.round((d.cantidad / totalTipo) * 100) : 0}%</td>
+                {topEquipos.length === 0 && <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
+                {topEquipos.map((e, i) => (
+                  <tr key={i} className="border-t border-border hover:bg-accent/30">
+                    <td className="p-2 font-mono">{e.codigo || "—"}</td>
+                    <td className="p-2">{e.nombre}</td>
+                    <td className="p-2 font-semibold">{e.total}</td>
+                    <td className="p-2 text-[hsl(var(--info))]">{e.abiertas}</td>
+                    <td className={`p-2 ${e.vencidas > 0 ? "text-destructive font-medium" : ""}`}>{e.vencidas}</td>
+                    <td className="p-2 tabular-nums">{fmtN(e.horas)}</td>
+                    <td className="p-2">{e.ultima || "—"}</td>
+                    <td className="p-2">
+                      <Button size="sm" variant="ghost" className="gap-1"
+                        onClick={() => goResultados({ codigoEquipo: e.codigo, nombreEquipo: e.codigo ? "" : e.nombre })}>
+                        Ver <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
-                <tr className="font-semibold bg-muted/50">
-                  <td className="p-2">Total</td>
-                  <td className="p-2 text-right">{totalTipo}</td>
-                  <td className="p-2 text-right">100%</td>
-                </tr>
               </tbody>
             </table>
-          </CardContent>
-        </Card>
+          </div>
+        </Section>
+
+        {/* carga por técnico */}
+        <Section title="Carga por técnico responsable">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary">
+                <tr>{["Técnico", "Total", "Abiertas", "Vencidas", "Cumplidas", "% en término", "Hs. Pres", "Hs. Real", "Desvío", ""].map((h) =>
+                  <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
+              </thead>
+              <tbody>
+                {cargaTecnico.length === 0 && <tr><td colSpan={10} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
+                {cargaTecnico.map((t) => {
+                  const desv = t.hReal - t.hPres;
+                  return (
+                    <tr key={t.tecnico} className="border-t border-border hover:bg-accent/30">
+                      <td className="p-2 font-medium">{t.tecnico}</td>
+                      <td className="p-2">{t.total}</td>
+                      <td className="p-2 text-[hsl(var(--info))]">{t.abiertas}</td>
+                      <td className={`p-2 ${t.vencidas > 0 ? "text-destructive font-medium" : ""}`}>{t.vencidas}</td>
+                      <td className="p-2 text-[hsl(var(--success))]">{t.cumplidas}</td>
+                      <td className="p-2">{t.cumplidas ? Math.round((t.enTermino / t.cumplidas) * 100) : 0}%</td>
+                      <td className="p-2 tabular-nums">{fmtN(t.hPres)}</td>
+                      <td className="p-2 tabular-nums">{fmtN(t.hReal)}</td>
+                      <td className={`p-2 tabular-nums ${desv > 0 ? "text-destructive" : desv < 0 ? "text-[hsl(var(--success))]" : ""}`}>
+                        {desv >= 0 ? "+" : ""}{fmtN(desv)}
+                      </td>
+                      <td className="p-2">
+                        <Button size="sm" variant="ghost" className="gap-1"
+                          onClick={() => goResultados({ tecnicoResponsable: t.tecnico === "Sin asignar" ? "" : t.tecnico })}>
+                          Ver <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        {/* horas pres vs real */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Section title="Horas presupuestadas vs reales por tipo">
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={horasPorTipo}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="tipo" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <Tooltip /><Legend />
+                  <Bar dataKey="pres" name="Presupuestadas" fill="hsl(215 60% 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="real" name="Reales" fill="hsl(0 75% 48%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Section>
+          <Section title="Mayores desvíos por OIT">
+            <div className="overflow-x-auto max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary sticky top-0">
+                  <tr>{["Nro", "Tipo", "Equipo", "Pres", "Real", "Desvío", "%"].map((h) =>
+                    <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {mayoresDesvios.length === 0 && <tr><td colSpan={7} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
+                  {mayoresDesvios.map(({ o, desv, pctD }) => (
+                    <tr key={o.id} className="border-t border-border hover:bg-accent/30 cursor-pointer" onClick={() => navigate(`/orden/${o.id}`)}>
+                      <td className="p-2 font-mono">{o.nroOrden}</td>
+                      <td className="p-2">{o.tipoOrden}</td>
+                      <td className="p-2">{[o.codigoEquipo, o.nombreEquipo].filter(Boolean).join(" — ") || "—"}</td>
+                      <td className="p-2 tabular-nums">{o.horasPresupuestadas}</td>
+                      <td className="p-2 tabular-nums">{o.horasReales}</td>
+                      <td className="p-2 tabular-nums text-destructive font-medium">+{desv}</td>
+                      <td className="p-2 text-destructive">+{pctD}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        </div>
+
+        {/* evolución mensual */}
+        <Section title="Evolución mensual" subtitle="OITs creadas, cumplidas y vencidas por mes">
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={evolucion}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="mes" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                <Tooltip /><Legend />
+                <Line type="monotone" dataKey="creadas" name="Creadas" stroke="hsl(215 60% 45%)" strokeWidth={2} />
+                <Line type="monotone" dataKey="cumplidas" name="Cumplidas" stroke="hsl(142 65% 38%)" strokeWidth={2} />
+                <Line type="monotone" dataKey="vencidas" name="Vencidas" stroke="hsl(0 75% 48%)" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+
+        {/* calidad */}
+        <Section title="Calidad y aprobaciones">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+            <Kpi title="Aprobadas" value={calidad.aprob} sub={`${pct(calidad.aprob, calidad.t)}%`} tone="success" />
+            <Kpi title="No aprobadas" value={calidad.t - calidad.aprob} sub={`${pct(calidad.t - calidad.aprob, calidad.t)}%`} tone="warning" />
+            <Kpi title="Con control calidad" value={calidad.cc} sub={`${pct(calidad.cc, calidad.t)}%`} tone="info" />
+            <Kpi title="Recepción NO APTO" value={calidad.noApto} tone={calidad.noApto > 0 ? "danger" : "default"} />
+            <Kpi title="Sin responsable calidad" value={calidad.sinResp} tone="warning" />
+            <Kpi title="Sin elaboró/revisó/aprobó" value={calidad.sinFlujo} tone="warning" />
+          </div>
+        </Section>
+
+        {/* preventivos */}
+        <Section title="Preventivos" subtitle={prevAvailable ? "Próximos y vencidos" : "Módulo no disponible"}>
+          {!prevAvailable ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No hay datos de preventivos disponibles.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
+                <Kpi title="Del período" value={prevs.total} onClick={() => navigate("/preventivos")} />
+                <Kpi title="Próx. 7 días" value={prevs.proximos7.length} tone="warning" onClick={() => navigate("/preventivos")} />
+                <Kpi title="Próx. 30 días" value={prevs.proximos30.length} tone="info" onClick={() => navigate("/preventivos")} />
+                <Kpi title="Vencidos" value={prevs.vencidos.length} tone={prevs.vencidos.length > 0 ? "danger" : "default"} onClick={() => navigate("/preventivos")} />
+                <Kpi title="Con OIT" value={prevs.conOIT} tone="success" />
+                <Kpi title="Sin OIT" value={prevs.sinOIT} tone="warning" />
+                <Kpi title="Realizados" value={prevs.realizados} tone="success" />
+                <Kpi title="Cancelados" value={prevs.cancelados} />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-secondary">
+                    <tr>{["F. Programada", "Código", "Equipo", "Tarea", "Estado", "OIT", ""].map((h) =>
+                      <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {proxPreventivos.length === 0 && <tr><td colSpan={7} className="text-center py-6 text-muted-foreground">Sin preventivos próximos</td></tr>}
+                    {proxPreventivos.map((p) => {
+                      const st = effectiveStatus(p, todayISO);
+                      return (
+                        <tr key={p.id} className="border-t border-border hover:bg-accent/30">
+                          <td className={`p-2 font-mono ${st === "Vencido" ? "text-destructive font-medium" : ""}`}>{p.scheduled_date}</td>
+                          <td className="p-2">{p.equipment_code_snapshot}</td>
+                          <td className="p-2">{p.equipment_name_snapshot}</td>
+                          <td className="p-2">{p.task_name}</td>
+                          <td className="p-2">{st}</td>
+                          <td className="p-2">{p.work_order_id ? "Sí" : "—"}</td>
+                          <td className="p-2"><Button size="sm" variant="ghost" onClick={() => navigate("/preventivos")}>Ver</Button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </Section>
+
+        {/* calidad de datos */}
+        <Section title="Calidad de datos" subtitle="Mejora la disciplina de carga">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Kpi title="Sin técnico" value={datos.sinTecnico} tone={datos.sinTecnico > 0 ? "warning" : "default"} />
+            <Kpi title="Sin equipo" value={datos.sinEquipo} tone={datos.sinEquipo > 0 ? "warning" : "default"} />
+            <Kpi title="Sin fecha límite" value={datos.sinLimite} tone={datos.sinLimite > 0 ? "warning" : "default"} />
+            <Kpi title="Sin hs. presup." value={datos.sinPres} tone={datos.sinPres > 0 ? "warning" : "default"} />
+            <Kpi title="Sin tipo" value={datos.sinTipo} tone={datos.sinTipo > 0 ? "warning" : "default"} />
+            <Kpi title="Sin sector" value={datos.sinSector} tone={datos.sinSector > 0 ? "warning" : "default"} />
+          </div>
+        </Section>
       </div>
     </AppLayout>
   );
