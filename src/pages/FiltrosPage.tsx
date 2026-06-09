@@ -291,7 +291,9 @@ export default function FiltrosPage() {
         </Section>
 
         <Section title="Datos generales">
-          <F label="Nro. de orden"><Input value={local.nroOrden} onChange={(e) => set("nroOrden", e.target.value)} /></F>
+          <F label="Nro. de orden">
+            <SearchSelect value={local.nroOrden} onChange={(v) => set("nroOrden", v)} options={optNroOrden} placeholder="Buscar número de orden..." />
+          </F>
           <F label="Sector">
             <SearchSelect value={local.sector} onChange={(v) => set("sector", v)} options={optSector} placeholder="Seleccionar sector..." />
           </F>
