@@ -204,9 +204,24 @@ export default function OrdenForm() {
           <Field label="Fecha de creación" required>
             <Input type="date" value={orden.fechaCreacion} onChange={(e) => set("fechaCreacion", e.target.value)} />
           </Field>
-          <Field label="Solicitante"><Input value={orden.solicitante} onChange={(e) => set("solicitante", e.target.value)} /></Field>
-          <Field label="Técnico responsable"><Input value={orden.tecnicoResponsable} onChange={(e) => set("tecnicoResponsable", e.target.value)} /></Field>
-          <Field label="Sector" required><Input value={orden.sector} onChange={(e) => set("sector", e.target.value)} /></Field>
+          <Field label="Solicitante">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_requester).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.solicitante} onChange={(v) => set("solicitante", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Técnico responsable">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_technician).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.tecnicoResponsable} onChange={(v) => set("tecnicoResponsable", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Sector" required>
+            <Combobox
+              options={sectors.filter((s) => s.active).map<ComboboxOption>((s) => ({ value: s.name, label: s.name }))}
+              value={orden.sector} onChange={(v) => set("sector", v)} disabled={!can1}
+              allowFreeSnapshot placeholder="Seleccionar sector..." />
+          </Field>
           <Field label="Tipo de orden" required>
             <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
@@ -265,8 +280,35 @@ export default function OrdenForm() {
 
         <Section title="3. Equipo y documentación" seccion={3} canEdit={can3}>
           <Field label="Código de documento"><Input value={orden.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></Field>
-          <Field label="Código de equipo"><Input value={orden.codigoEquipo} onChange={(e) => set("codigoEquipo", e.target.value)} /></Field>
-          <Field label="Nombre de equipo"><Input value={orden.nombreEquipo} onChange={(e) => set("nombreEquipo", e.target.value)} /></Field>
+          <Field label="Código de equipo">
+            <Combobox
+              options={equipos.filter((e) => e.active).map<ComboboxOption>((e) => ({ value: e.code, label: `${e.code} — ${e.name}`, keywords: e.name }))}
+              value={orden.codigoEquipo}
+              onChange={(v) => {
+                const eq = equipos.find((x) => x.code === v);
+                setOrden((o) => o ? ({ ...o, codigoEquipo: v, nombreEquipo: eq ? eq.name : o.nombreEquipo }) : o);
+              }}
+              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar código..." />
+          </Field>
+          <Field label="Nombre de equipo">
+            <Combobox
+              options={Array.from(new Set(equipos.filter((e) => e.active).map((e) => e.name))).sort().map<ComboboxOption>((n) => ({ value: n, label: n }))}
+              value={orden.nombreEquipo}
+              onChange={(v) => {
+                const matches = equipos.filter((e) => e.active && e.name === v);
+                setOrden((o) => {
+                  if (!o) return o;
+                  if (matches.length === 1) return { ...o, nombreEquipo: v, codigoEquipo: matches[0].code };
+                  // Múltiples: si el código actual no pertenece a ese nombre, limpiar
+                  const keepCode = matches.some((m) => m.code === o.codigoEquipo);
+                  return { ...o, nombreEquipo: v, codigoEquipo: keepCode ? o.codigoEquipo : "" };
+                });
+              }}
+              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar equipo..." />
+            {orden.nombreEquipo && equipos.filter((e) => e.active && e.name === orden.nombreEquipo).length > 1 && !orden.codigoEquipo && (
+              <p className="text-xs text-amber-600 mt-1">Hay varios códigos para este nombre. Elegí el código arriba.</p>
+            )}
+          </Field>
         </Section>
 
         <Section title="4. Recepción, limpieza y herramientas" seccion={4} canEdit={can4}>
