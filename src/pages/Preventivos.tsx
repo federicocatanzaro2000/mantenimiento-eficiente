@@ -338,6 +338,11 @@ export default function Preventivos() {
                 <Plus className="h-4 w-4" /> Nuevo preventivo
               </Button>
             )}
+            {canManagePreventivos(roles) && (
+              <Button size="sm" variant="secondary" onClick={() => abrirGenerarAnio(filtroAnio !== "__all" ? Number(filtroAnio) : currentYear)}>
+                <CalendarPlus className="h-4 w-4" /> Generar año
+              </Button>
+            )}
             {canImportPreventivos(roles) && (
               <Button size="sm" variant="outline" onClick={() => setTab("importar")}>
                 <Upload className="h-4 w-4" /> Importar Excel
