@@ -102,7 +102,7 @@
 }
 
 /* Print template visibility */
-.print-only { display: none; }
+.print-only { display: none !important; }
 
 @media print {
   @page { size: A4 portrait; margin: 8mm; }
