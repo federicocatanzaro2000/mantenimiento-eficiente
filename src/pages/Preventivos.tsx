@@ -720,7 +720,55 @@ export default function Preventivos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Generar año */}
+      <Dialog open={openGenerar} onOpenChange={(o) => !o && setOpenGenerar(false)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Generar preventivos anuales</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground text-xs">
+              Genera el cronograma completo del año seleccionado a partir de todas las plantillas activas con frecuencia mensual. Es idempotente: re-ejecutar no duplica preventivos ya generados.
+            </p>
+            <div>
+              <Label>Año a generar</Label>
+              <Select value={String(genAnio)} onValueChange={(v) => { const n = Number(v); setGenAnio(n); void cargarPreview(n); }}>
+                <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 7 }, (_, i) => currentYear - 1 + i).map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="rounded border p-3 bg-muted/30 space-y-1">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">Vista previa</div>
+              {genLoadingPreview && <div className="text-xs text-muted-foreground">Calculando…</div>}
+              {!genLoadingPreview && genPreview && (
+                <>
+                  <div><strong>{genPreview.planes}</strong> plantillas activas con frecuencia mensual</div>
+                  <div><strong>{genPreview.candidatos}</strong> instancias a evaluar</div>
+                  <div className="text-emerald-700"><strong>{genPreview.nuevos}</strong> nuevas a crear</div>
+                  <div className="text-muted-foreground"><strong>{genPreview.existentes}</strong> ya existían (se omitirán)</div>
+                  {genPreview.planesSinFrecuencia > 0 && (
+                    <div className="text-amber-700 text-xs">{genPreview.planesSinFrecuencia} planes activos sin frecuencia mensual no se generarán.</div>
+                  )}
+                  {genPreview.planes === 0 && (
+                    <div className="text-amber-700 text-xs">No hay plantillas preventivas activas con frecuencia mensual.</div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenGenerar(false)}>Cancelar</Button>
+            <Button onClick={confirmarGenerar} disabled={genSaving || genLoadingPreview || !genPreview || genPreview.nuevos === 0}>
+              {genSaving ? "Generando…" : `Generar ${genPreview?.nuevos ?? 0} preventivos`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
+
   );
 }
 
