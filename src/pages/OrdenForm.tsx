@@ -24,13 +24,20 @@ import { PrintableOrden } from "@/components/PrintableOrden";
 const handlePrint = (orden: Orden) => {
   const filename = orden.nroOrden ? `INCALFOOD OIT ${orden.nroOrden}` : "INCALFOOD OIT SIN NUMERO";
   const prevTitle = document.title;
-  document.title = filename;
+  const setTitle = () => { document.title = filename; };
   const restore = () => {
     document.title = prevTitle;
     window.removeEventListener("afterprint", restore);
+    window.removeEventListener("beforeprint", setTitle);
   };
+  window.addEventListener("beforeprint", setTitle);
   window.addEventListener("afterprint", restore);
-  setTimeout(() => window.print(), 50);
+  setTitle();
+  setTimeout(() => {
+    window.print();
+    // fallback restore por si afterprint no dispara
+    setTimeout(restore, 1500);
+  }, 80);
 };
 
 const uid = () => Math.random().toString(36).slice(2, 10);

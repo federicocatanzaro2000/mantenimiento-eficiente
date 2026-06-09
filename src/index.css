@@ -105,8 +105,8 @@
 .print-only { display: none; }
 
 @media print {
-  @page { size: A4 portrait; margin: 8mm; }
-  html, body { background: #fff !important; }
+  @page { size: A4 portrait; margin: 7mm; }
+  html, body { background: #fff !important; height: auto !important; }
   body * { visibility: hidden !important; }
   .print-only, .print-only * { visibility: visible !important; }
   .print-only {
@@ -116,65 +116,67 @@
     width: 100%;
   }
   .no-print { display: none !important; }
+  /* Forzar 1 sola carilla: limitar alto y ocultar cualquier desborde */
+  .po-root {
+    max-height: 283mm; /* A4 alto 297mm - 2*7mm margen */
+    overflow: hidden;
+  }
 }
 
 /* ========= Printable OIT template ========= */
 .po-root {
   width: 100%;
-  max-width: 194mm;
+  max-width: 196mm;
   margin: 0 auto;
   color: #111;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  font-size: 8.5px;
-  line-height: 1.2;
+  font-size: 8px;
+  line-height: 1.15;
   background: #fff;
 }
 .po-header {
   display: grid;
-  grid-template-columns: 60px 1fr auto;
+  grid-template-columns: 46px 1fr auto;
   align-items: center;
-  gap: 6mm;
+  gap: 5mm;
   border-bottom: 1.5px solid #333;
-  padding-bottom: 2mm;
-  margin-bottom: 2mm;
+  padding-bottom: 1.5mm;
+  margin-bottom: 1.5mm;
 }
-.po-logo { height: 46px; width: auto; object-fit: contain; }
-.po-title { font-size: 13px; font-weight: 800; margin: 0; letter-spacing: 0.3px; }
-.po-subtitle { font-size: 7.5px; color: #555; margin-top: 1px; }
+.po-logo { height: 38px; width: auto; object-fit: contain; }
+.po-title { font-size: 12.5px; font-weight: 800; margin: 0; letter-spacing: 0.3px; }
+.po-subtitle { font-size: 7px; color: #555; margin-top: 1px; }
 .po-header-meta {
-  font-size: 8px;
+  font-size: 7.5px;
   display: grid;
   grid-template-columns: repeat(2, auto);
   gap: 0 8px;
   text-align: right;
   border: 1px solid #999;
-  padding: 3px 5px;
+  padding: 2px 5px;
   border-radius: 2px;
+  line-height: 1.25;
 }
 .po-header-meta b { font-weight: 700; }
 
 .po-section-title {
-  font-size: 9.5px;
+  font-size: 8.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   background: #e5e7eb;
   color: #111;
-  padding: 1.5px 4px;
-  margin: 2.5mm 0 1mm 0;
+  padding: 1px 4px;
+  margin: 1.5mm 0 0.8mm 0;
   border-left: 2px solid #444;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
   break-after: avoid;
   page-break-after: avoid;
 }
-.po-section-n {
-  display: inline-block;
-  font-weight: 800;
-  margin-right: 4px;
-}
+.po-section-n { display: inline-block; font-weight: 800; margin-right: 4px; }
 
-.po-grid { display: grid; gap: 1mm 2mm; margin-bottom: 1mm; break-inside: avoid; page-break-inside: avoid; }
+.po-grid { display: grid; gap: 0.8mm 1.5mm; margin-bottom: 0.8mm; break-inside: avoid; page-break-inside: avoid; }
 .po-grid-1 { grid-template-columns: 1fr; }
 .po-grid-2 { grid-template-columns: repeat(2, 1fr); }
 .po-grid-3 { grid-template-columns: repeat(3, 1fr); }
@@ -185,75 +187,77 @@
   border: 0.5px solid #bbb;
   border-radius: 1.5px;
   padding: 1px 4px;
-  min-height: 22px;
+  min-height: 18px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   break-inside: avoid;
 }
 .po-label {
-  font-size: 6.5px;
+  font-size: 6px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   color: #555;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 .po-value {
-  font-size: 9px;
+  font-size: 8.5px;
   color: #111;
   word-break: break-word;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 .po-text {
-  font-size: 8.5px;
+  font-size: 8px;
   white-space: pre-wrap;
   word-break: break-word;
-  min-height: 18px;
-  max-height: 60px;
+  min-height: 14px;
+  max-height: 36px;
   overflow: hidden;
+  line-height: 1.2;
 }
 
 .po-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 8px;
-  margin-bottom: 1mm;
+  font-size: 7.5px;
+  margin-bottom: 0.8mm;
 }
 .po-table thead th {
   background: #cbd5e1;
   color: #111;
   text-align: left;
-  padding: 2px 4px;
+  padding: 1.5px 4px;
   border: 0.5px solid #777;
-  font-size: 7.5px;
+  font-size: 7px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
 .po-table tbody td {
-  padding: 1.5px 4px;
+  padding: 1px 4px;
   border: 0.5px solid #bbb;
   vertical-align: top;
+  line-height: 1.15;
 }
 .po-empty {
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-style: italic;
   color: #555;
   border: 0.5px dashed #aaa;
-  padding: 3px 5px;
+  padding: 2px 5px;
   text-align: center;
-  margin-bottom: 1mm;
+  margin-bottom: 0.8mm;
 }
 
 .po-footer {
-  margin-top: 3mm;
+  margin-top: 2mm;
   padding-top: 1mm;
   border-top: 0.5px solid #999;
   display: flex;
   justify-content: space-between;
-  font-size: 7px;
+  font-size: 6.5px;
   color: #555;
 }
+
 
