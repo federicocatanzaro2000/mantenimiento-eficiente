@@ -381,11 +381,24 @@ export default function OrdenForm() {
             </div>
           </Field>
           <Field label="Responsable Control de Calidad">
-            <Input value={orden.responsableControlCalidad} onChange={(e) => set("responsableControlCalidad", e.target.value)} />
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_quality_responsible).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.responsableControlCalidad} onChange={(v) => set("responsableControlCalidad", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
           <div className="hidden lg:block" />
-          <Field label="Elaboró"><Input value={orden.elaboro} onChange={(e) => set("elaboro", e.target.value)} /></Field>
-          <Field label="Revisó"><Input value={orden.reviso} onChange={(e) => set("reviso", e.target.value)} /></Field>
+          <Field label="Elaboró">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_created_by).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.elaboro} onChange={(v) => set("elaboro", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
+          <Field label="Revisó">
+            <Combobox
+              options={people.filter((p) => p.active && p.can_be_reviewed_by).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
+              value={orden.reviso} onChange={(v) => set("reviso", v)} disabled={!can6}
+              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          </Field>
           <Field label="Aprobó"><Input value={orden.aprobo} onChange={(e) => set("aprobo", e.target.value)} /></Field>
         </Section>
 
