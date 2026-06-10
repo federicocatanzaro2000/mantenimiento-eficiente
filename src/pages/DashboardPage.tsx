@@ -488,6 +488,9 @@ export default function DashboardPage() {
           <Kpi title="Preventivos próx. 7 días" value={prevAvailable ? fmtN(prevs.proximos7.length) : "—"}
             sub={prevAvailable ? `${prevs.vencidos.length} vencidos` : "Sin módulo"} tone={prevs.vencidos.length > 0 ? "warning" : "default"} icon={Wrench}
             onClick={prevAvailable ? () => navigate("/preventivos") : undefined} />
+          <Kpi title="Correctivas con línea parada" value={fmtN(kpis.correctivasLineaParada)} tone={kpis.correctivasLineaParada > 0 ? "danger" : "default"} icon={AlertTriangle}
+            onClick={() => goResultados({ tipoOrden: ["Correctivo"], lineStopped: "Si" })} />
+          <Kpi title="Horas de línea parada" value={fmtN(kpis.horasLineaParada)} sub="Total del período" tone={kpis.horasLineaParada > 0 ? "danger" : "default"} icon={Clock} />
         </div>
 
         {/* alertas operativas */}
