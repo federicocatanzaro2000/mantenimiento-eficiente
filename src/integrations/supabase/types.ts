@@ -62,6 +62,8 @@ export type Database = {
           horas_presupuestadas: number | null
           horas_reales: number | null
           id: string
+          line_stopped: boolean | null
+          line_stopped_hours: number | null
           materiales_utilizados: Json
           nombre_equipo: string | null
           nro_orden: number
@@ -99,6 +101,8 @@ export type Database = {
           horas_presupuestadas?: number | null
           horas_reales?: number | null
           id?: string
+          line_stopped?: boolean | null
+          line_stopped_hours?: number | null
           materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden: number
@@ -136,6 +140,8 @@ export type Database = {
           horas_presupuestadas?: number | null
           horas_reales?: number | null
           id?: string
+          line_stopped?: boolean | null
+          line_stopped_hours?: number | null
           materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden?: number
