@@ -104,4 +104,5 @@ export const filtrosVacios: Filtros = {
   herramientasLimpias: "Todos",
   controlCalidad: "Todos",
   responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
+  lineStopped: "Todos", lineStoppedHorasMin: "", lineStoppedHorasMax: "",
 };
