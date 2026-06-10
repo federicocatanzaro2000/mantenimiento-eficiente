@@ -245,7 +245,7 @@ export default function OrdenForm() {
               allowFreeSnapshot placeholder="Seleccionar sector..." />
           </Field>
           <Field label="Tipo de orden" required>
-            <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)} disabled={!can1}>
+            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {["Preventivo", "Correctivo", "Edilicio", "Limpieza"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
