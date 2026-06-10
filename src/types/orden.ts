@@ -81,6 +81,9 @@ export interface Filtros {
   elaboro: string;
   reviso: string;
   aprobo: string;
+  lineStopped: "Todos" | "Si" | "No";
+  lineStoppedHorasMin: string;
+  lineStoppedHorasMax: string;
 }
 
 export const filtrosVacios: Filtros = {
