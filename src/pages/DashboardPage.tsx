@@ -206,7 +206,9 @@ export default function DashboardPage() {
     const hReal = filtered.reduce((s, o) => s + (Number(o.horasReales) || 0), 0);
     const desv = hReal - hPres;
     const desvPct = hPres > 0 ? Math.round((desv / hPres) * 100) : 0;
-    return { total, abiertas, cumplidas, vencidas, altaAbiertas, cumplPct, hPres, hReal, desv, desvPct };
+    const correctivasLineaParada = filtered.filter((o) => o.tipoOrden === "Correctivo" && o.lineStopped === true).length;
+    const horasLineaParada = filtered.reduce((s, o) => s + (o.lineStopped === true ? (Number(o.lineStoppedHours) || 0) : 0), 0);
+    return { total, abiertas, cumplidas, vencidas, altaAbiertas, cumplPct, hPres, hReal, desv, desvPct, correctivasLineaParada, horasLineaParada };
   }, [filtered]);
 
   // estado distribution
