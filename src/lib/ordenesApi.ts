@@ -34,6 +34,8 @@ export function rowToOrden(r: any): Orden {
     elaboro: r.elaboro ?? "",
     reviso: r.reviso ?? "",
     aprobo: r.aprobo ?? "",
+    lineStopped: r.line_stopped === null || r.line_stopped === undefined ? null : !!r.line_stopped,
+    lineStoppedHours: r.line_stopped_hours == null ? "" : Number(r.line_stopped_hours),
     createdAt: r.created_at ?? "",
     updatedAt: r.updated_at ?? "",
     createdBy: r.created_by ?? null,
