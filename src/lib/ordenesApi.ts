@@ -74,6 +74,11 @@ function ordenToRow(o: Orden) {
     elaboro: o.elaboro,
     reviso: o.reviso,
     aprobo: o.aprobo,
+    line_stopped: o.tipoOrden === "Correctivo" ? (o.lineStopped ?? null) : null,
+    line_stopped_hours:
+      o.tipoOrden === "Correctivo" && o.lineStopped === true && o.lineStoppedHours !== ""
+        ? Number(o.lineStoppedHours)
+        : null,
   };
 }
 
