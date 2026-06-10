@@ -149,7 +149,24 @@ export default function OrdenForm() {
     if (!orden.estado) return "Estado obligatorio";
     if (!orden.prioridad) return "Prioridad obligatoria";
     if (Number(orden.horasPresupuestadas) < 0 || Number(orden.horasReales) < 0) return "Las horas no pueden ser negativas";
+    if (orden.tipoOrden === "Correctivo") {
+      if (orden.lineStopped === null) return "Indicar si se paró la línea.";
+      if (orden.lineStopped === true) {
+        if (orden.lineStoppedHours === "" || orden.lineStoppedHours === null) return "Cargar las horas de línea parada.";
+        if (Number(orden.lineStoppedHours) <= 0) return "Las horas de línea parada deben ser mayores a 0.";
+      }
+    }
     return null;
+  };
+
+  const setTipoOrden = (v: any) => {
+    setOrden((o) => {
+      if (!o) return o;
+      if (v !== "Correctivo") {
+        return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
+      }
+      return { ...o, tipoOrden: v };
+    });
   };
 
   const guardar = async (volver: boolean) => {
