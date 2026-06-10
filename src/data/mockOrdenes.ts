@@ -26,7 +26,7 @@ export const ordenesMock: Orden[] = [
     ],
     controlLiberacionCalidad: true, responsableControlCalidad: "María López",
     elaboro: "Juan Pérez", reviso: "Andrés Ruiz", aprobo: "María López",
-    createdAt: today(-30), updatedAt: today(-25),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-30), updatedAt: today(-25),
   },
   {
     id: uid(), nroOrden: 1002, fechaCreacion: today(-20), fechaInicio: today(-19),
@@ -42,7 +42,7 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [{ id: uid(), cantidad: 1, descripcion: "Rodamiento SKF", codigo: "RD-6205" }],
     controlLiberacionCalidad: false, responsableControlCalidad: "",
     elaboro: "Lucía Fernández", reviso: "", aprobo: "",
-    createdAt: today(-20), updatedAt: today(-1),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-20), updatedAt: today(-1),
   },
   {
     id: uid(), nroOrden: 1003, fechaCreacion: today(-15), fechaInicio: today(-14),
@@ -60,7 +60,7 @@ export const ordenesMock: Orden[] = [
     ],
     controlLiberacionCalidad: true, responsableControlCalidad: "Andrés Ruiz",
     elaboro: "Roberto Díaz", reviso: "Andrés Ruiz", aprobo: "María López",
-    createdAt: today(-15), updatedAt: today(-13),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-15), updatedAt: today(-13),
   },
   {
     id: uid(), nroOrden: 1004, fechaCreacion: today(-10), fechaInicio: "",
@@ -76,7 +76,7 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [],
     controlLiberacionCalidad: false, responsableControlCalidad: "",
     elaboro: "", reviso: "", aprobo: "",
-    createdAt: today(-10), updatedAt: today(-10),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-10), updatedAt: today(-10),
   },
   {
     id: uid(), nroOrden: 1005, fechaCreacion: today(-8), fechaInicio: today(-7),
@@ -92,7 +92,7 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [],
     controlLiberacionCalidad: true, responsableControlCalidad: "María López",
     elaboro: "Mario Sánchez", reviso: "Andrés Ruiz", aprobo: "María López",
-    createdAt: today(-8), updatedAt: today(-6),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-8), updatedAt: today(-6),
   },
   {
     id: uid(), nroOrden: 1006, fechaCreacion: today(-5), fechaInicio: today(-4),
@@ -108,7 +108,7 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [{ id: uid(), cantidad: 4, descripcion: "Rodillo industrial", codigo: "RI-100" }],
     controlLiberacionCalidad: false, responsableControlCalidad: "",
     elaboro: "Juan Pérez", reviso: "", aprobo: "",
-    createdAt: today(-5), updatedAt: today(-1),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-5), updatedAt: today(-1),
   },
   {
     id: uid(), nroOrden: 1007, fechaCreacion: today(-3), fechaInicio: today(-2),
@@ -124,7 +124,7 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [],
     controlLiberacionCalidad: true, responsableControlCalidad: "Andrés Ruiz",
     elaboro: "Lucía Fernández", reviso: "Andrés Ruiz", aprobo: "María López",
-    createdAt: today(-3), updatedAt: today(-1),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-3), updatedAt: today(-1),
   },
   {
     id: uid(), nroOrden: 1008, fechaCreacion: today(-1), fechaInicio: "",
@@ -140,6 +140,6 @@ export const ordenesMock: Orden[] = [
     materialesUtilizados: [],
     controlLiberacionCalidad: false, responsableControlCalidad: "",
     elaboro: "", reviso: "", aprobo: "",
-    createdAt: today(-1), updatedAt: today(-1),
+    lineStopped: null, lineStoppedHours: "", createdAt: today(-1), updatedAt: today(-1),
   },
 ];
