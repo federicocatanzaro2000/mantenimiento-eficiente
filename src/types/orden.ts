@@ -41,6 +41,8 @@ export interface Orden {
   elaboro: string;
   reviso: string;
   aprobo: string;
+  lineStopped: boolean | null;
+  lineStoppedHours: number | "";
   createdAt: string;
   updatedAt: string;
   createdBy?: string | null;
