@@ -47,6 +47,9 @@ export function aplicarFiltros(ordenes: Orden[], f: Filtros): Orden[] {
     if (!txt(o.elaboro, f.elaboro)) return false;
     if (!txt(o.reviso, f.reviso)) return false;
     if (!txt(o.aprobo, f.aprobo)) return false;
+    if (f.lineStopped === "Si" && o.lineStopped !== true) return false;
+    if (f.lineStopped === "No" && o.lineStopped !== false) return false;
+    if (!numIn(o.lineStoppedHours, f.lineStoppedHorasMin, f.lineStoppedHorasMax)) return false;
     return true;
   });
 }

@@ -41,6 +41,8 @@ export interface Orden {
   elaboro: string;
   reviso: string;
   aprobo: string;
+  lineStopped: boolean | null;
+  lineStoppedHours: number | "";
   createdAt: string;
   updatedAt: string;
   createdBy?: string | null;
@@ -79,6 +81,9 @@ export interface Filtros {
   elaboro: string;
   reviso: string;
   aprobo: string;
+  lineStopped: "Todos" | "Si" | "No";
+  lineStoppedHorasMin: string;
+  lineStoppedHorasMax: string;
 }
 
 export const filtrosVacios: Filtros = {
@@ -99,4 +104,5 @@ export const filtrosVacios: Filtros = {
   herramientasLimpias: "Todos",
   controlCalidad: "Todos",
   responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
+  lineStopped: "Todos", lineStoppedHorasMin: "", lineStoppedHorasMax: "",
 };

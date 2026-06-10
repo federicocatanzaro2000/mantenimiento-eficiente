@@ -77,6 +77,22 @@ export function PrintableOrden({ orden }: { orden: Orden }) {
             <F label="Horas presup." value={dash(orden.horasPresupuestadas)} />
             <F label="Horas reales" value={dash(orden.horasReales)} />
           </div>
+          {orden.tipoOrden === "Correctivo" && (
+            <div className="po-grid po-grid-2">
+              <F
+                label="Se paró la línea"
+                value={orden.lineStopped === true ? "Sí" : orden.lineStopped === false ? "No" : "-"}
+              />
+              <F
+                label="Horas de línea parada"
+                value={
+                  orden.lineStopped === true && orden.lineStoppedHours !== "" && orden.lineStoppedHours !== null
+                    ? `${orden.lineStoppedHours} hs`
+                    : "-"
+                }
+              />
+            </div>
+          )}
           <div className="po-grid po-grid-2 po-grid-tall">
             <F label="Descripción del problema" value={<div className="po-text po-text-tall">{dash(orden.descripcionProblema)}</div>} />
             <F label="Trabajo solicitado" value={<div className="po-text po-text-tall">{dash(orden.trabajoSolicitado)}</div>} />

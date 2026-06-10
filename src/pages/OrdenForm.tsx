@@ -52,6 +52,7 @@ const empty = (nro: number): Orden => ({
   observaciones: "", sectorLimpioOrdenado: false, herramientasLimpiasOrdenadas: false,
   materialesUtilizados: [], controlLiberacionCalidad: false,
   responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
+  lineStopped: null, lineStoppedHours: "",
   createdAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString().slice(0, 10),
 });
@@ -148,7 +149,24 @@ export default function OrdenForm() {
     if (!orden.estado) return "Estado obligatorio";
     if (!orden.prioridad) return "Prioridad obligatoria";
     if (Number(orden.horasPresupuestadas) < 0 || Number(orden.horasReales) < 0) return "Las horas no pueden ser negativas";
+    if (orden.tipoOrden === "Correctivo") {
+      if (orden.lineStopped === null) return "Indicar si se paró la línea.";
+      if (orden.lineStopped === true) {
+        if (orden.lineStoppedHours === "" || orden.lineStoppedHours === null) return "Cargar las horas de línea parada.";
+        if (Number(orden.lineStoppedHours) <= 0) return "Las horas de línea parada deben ser mayores a 0.";
+      }
+    }
     return null;
+  };
+
+  const setTipoOrden = (v: any) => {
+    setOrden((o) => {
+      if (!o) return o;
+      if (v !== "Correctivo") {
+        return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
+      }
+      return { ...o, tipoOrden: v };
+    });
   };
 
   const guardar = async (volver: boolean) => {
@@ -227,7 +245,7 @@ export default function OrdenForm() {
               allowFreeSnapshot placeholder="Seleccionar sector..." />
           </Field>
           <Field label="Tipo de orden" required>
-            <Select value={orden.tipoOrden || undefined} onValueChange={(v) => set("tipoOrden", v as any)} disabled={!can1}>
+            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {["Preventivo", "Correctivo", "Edilicio", "Limpieza"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
@@ -270,6 +288,43 @@ export default function OrdenForm() {
             <Input type="number" min={0} value={orden.horasReales}
               onChange={(e) => set("horasReales", e.target.value === "" ? "" : Number(e.target.value))} />
           </Field>
+          {orden.tipoOrden === "Correctivo" && (
+            <>
+              <Field label="¿Se paró la línea?" required>
+                <div className="flex gap-4 h-10 items-center">
+                  {([["Sí", true], ["No", false]] as const).map(([lbl, val]) => (
+                    <label key={lbl} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="line_stopped"
+                        checked={orden.lineStopped === val}
+                        onChange={() => setOrden((o) => o ? ({
+                          ...o,
+                          lineStopped: val,
+                          lineStoppedHours: val ? o.lineStoppedHours : "",
+                        }) : o)}
+                        disabled={!can2}
+                      />
+                      {lbl}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+              {orden.lineStopped === true && (
+                <Field label="Horas de línea parada" required>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.25"
+                    value={orden.lineStoppedHours}
+                    onChange={(e) =>
+                      set("lineStoppedHours", e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                  />
+                </Field>
+              )}
+            </>
+          )}
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="Descripción del problema">
               <Textarea rows={3} value={orden.descripcionProblema} onChange={(e) => set("descripcionProblema", e.target.value)} />

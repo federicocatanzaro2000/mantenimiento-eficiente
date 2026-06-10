@@ -206,7 +206,9 @@ export default function DashboardPage() {
     const hReal = filtered.reduce((s, o) => s + (Number(o.horasReales) || 0), 0);
     const desv = hReal - hPres;
     const desvPct = hPres > 0 ? Math.round((desv / hPres) * 100) : 0;
-    return { total, abiertas, cumplidas, vencidas, altaAbiertas, cumplPct, hPres, hReal, desv, desvPct };
+    const correctivasLineaParada = filtered.filter((o) => o.tipoOrden === "Correctivo" && o.lineStopped === true).length;
+    const horasLineaParada = filtered.reduce((s, o) => s + (o.lineStopped === true ? (Number(o.lineStoppedHours) || 0) : 0), 0);
+    return { total, abiertas, cumplidas, vencidas, altaAbiertas, cumplPct, hPres, hReal, desv, desvPct, correctivasLineaParada, horasLineaParada };
   }, [filtered]);
 
   // estado distribution
@@ -486,6 +488,9 @@ export default function DashboardPage() {
           <Kpi title="Preventivos próx. 7 días" value={prevAvailable ? fmtN(prevs.proximos7.length) : "—"}
             sub={prevAvailable ? `${prevs.vencidos.length} vencidos` : "Sin módulo"} tone={prevs.vencidos.length > 0 ? "warning" : "default"} icon={Wrench}
             onClick={prevAvailable ? () => navigate("/preventivos") : undefined} />
+          <Kpi title="Correctivas con línea parada" value={fmtN(kpis.correctivasLineaParada)} tone={kpis.correctivasLineaParada > 0 ? "danger" : "default"} icon={AlertTriangle}
+            onClick={() => goResultados({ tipoOrden: ["Correctivo"], lineStopped: "Si" })} />
+          <Kpi title="Horas de línea parada" value={fmtN(kpis.horasLineaParada)} sub="Total del período" tone={kpis.horasLineaParada > 0 ? "danger" : "default"} icon={Clock} />
         </div>
 
         {/* alertas operativas */}
