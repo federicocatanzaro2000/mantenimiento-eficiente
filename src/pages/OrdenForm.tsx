@@ -288,6 +288,43 @@ export default function OrdenForm() {
             <Input type="number" min={0} value={orden.horasReales}
               onChange={(e) => set("horasReales", e.target.value === "" ? "" : Number(e.target.value))} />
           </Field>
+          {orden.tipoOrden === "Correctivo" && (
+            <>
+              <Field label="¿Se paró la línea?" required>
+                <div className="flex gap-4 h-10 items-center">
+                  {([["Sí", true], ["No", false]] as const).map(([lbl, val]) => (
+                    <label key={lbl} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="line_stopped"
+                        checked={orden.lineStopped === val}
+                        onChange={() => setOrden((o) => o ? ({
+                          ...o,
+                          lineStopped: val,
+                          lineStoppedHours: val ? o.lineStoppedHours : "",
+                        }) : o)}
+                        disabled={!can2}
+                      />
+                      {lbl}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+              {orden.lineStopped === true && (
+                <Field label="Horas de línea parada" required>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.25"
+                    value={orden.lineStoppedHours}
+                    onChange={(e) =>
+                      set("lineStoppedHours", e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                  />
+                </Field>
+              )}
+            </>
+          )}
           <div className="md:col-span-2 lg:col-span-3">
             <Field label="Descripción del problema">
               <Textarea rows={3} value={orden.descripcionProblema} onChange={(e) => set("descripcionProblema", e.target.value)} />
