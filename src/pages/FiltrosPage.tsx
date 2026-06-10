@@ -351,6 +351,21 @@ export default function FiltrosPage() {
           </F>
         </Section>
 
+        <Section title="Impacto productivo">
+          <F label="¿Se paró la línea?">
+            <Select value={local.lineStopped} onValueChange={(v) => set("lineStopped", v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Todos","Si","No"].map((x) => <SelectItem key={x} value={x}>{x === "Si" ? "Sí" : x}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </F>
+          <F label="Horas de línea parada">
+            <RangoNum min={local.lineStoppedHorasMin} max={local.lineStoppedHorasMax}
+              onMin={(v: string) => set("lineStoppedHorasMin", v)} onMax={(v: string) => set("lineStoppedHorasMax", v)} />
+          </F>
+        </Section>
+
         <Section title="Calidad y aprobaciones">
           <F label="Sector limpio">
             <Select value={local.sectorLimpio} onValueChange={(v) => set("sectorLimpio", v as any)}>
