@@ -305,8 +305,7 @@ export default function DashboardPage() {
 
   // horas pres vs real por tipo
   const horasPorTipo = useMemo(() => {
-    const tipos: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
-    return tipos.map((t) => {
+    return tiposDinamicos.map((t) => {
       const arr = filtered.filter((o) => o.tipoOrden === t);
       return {
         tipo: t,
@@ -314,7 +313,7 @@ export default function DashboardPage() {
         real: arr.reduce((s, o) => s + (Number(o.horasReales) || 0), 0),
       };
     });
-  }, [filtered]);
+  }, [filtered, tiposDinamicos]);
 
   // mayor desvío
   const mayoresDesvios = useMemo(() => {
