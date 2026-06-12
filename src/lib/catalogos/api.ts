@@ -10,6 +10,16 @@ export interface Person {
 export interface Equipment { id: string; code: string; name: string; active: boolean; }
 export type PersonField = "can_be_requester" | "can_be_technician" | "can_be_quality_responsible" | "can_be_created_by" | "can_be_reviewed_by" | "can_be_approver";
 
+export interface OrderType {
+  id: string;
+  name: string;
+  active: boolean;
+  sort_order: number;
+  color: string | null;
+  description: string | null;
+  requires_line_stoppage_question: boolean;
+}
+
 // SECTORS
 export async function listSectors(activeOnly = false): Promise<Sector[]> {
   let q = supabase.from("sectors").select("*").order("sort_order").order("name");
@@ -63,5 +73,25 @@ export async function updateEquipment(id: string, patch: Partial<Pick<Equipment,
   if (patch.code) patch.code = patch.code.trim();
   if (patch.name) patch.name = patch.name.trim();
   const { error } = await supabase.from("equipment").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+// ORDER TYPES
+export async function listOrderTypes(activeOnly = false): Promise<OrderType[]> {
+  let q = (supabase as any).from("order_types").select("*").order("sort_order").order("name");
+  if (activeOnly) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as OrderType[];
+}
+export async function createOrderType(p: Omit<OrderType, "id">) {
+  const { error } = await (supabase as any).from("order_types").insert({
+    ...p, name: p.name.trim(),
+  });
+  if (error) throw error;
+}
+export async function updateOrderType(id: string, patch: Partial<Omit<OrderType, "id">>) {
+  if (patch.name) patch.name = patch.name.trim();
+  const { error } = await (supabase as any).from("order_types").update(patch).eq("id", id);
   if (error) throw error;
 }

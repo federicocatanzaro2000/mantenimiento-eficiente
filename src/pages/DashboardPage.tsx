@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { EstadoOrden, Prioridad, TipoOrden, Filtros, filtrosVacios, Orden } from "@/types/orden";
 import { SearchSelect, SearchOption } from "@/components/SearchSelect";
-import { listSectors, listPeople, listEquipment, Person, Sector, Equipment } from "@/lib/catalogos/api";
+import { listSectors, listPeople, listEquipment, listOrderTypes, Person, Sector, Equipment, OrderType } from "@/lib/catalogos/api";
 import { listPreventives } from "@/lib/preventiveManual/api";
 import { PreventiveItem, effectiveStatus } from "@/lib/preventiveManual/types";
 import {
@@ -116,6 +116,7 @@ export default function DashboardPage() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
+  const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
   const [preventivos, setPreventivos] = useState<PreventiveItem[]>([]);
   const [prevAvailable, setPrevAvailable] = useState<boolean>(true);
 
@@ -126,8 +127,8 @@ export default function DashboardPage() {
 
   const reload = async () => {
     try {
-      const [s, p, e] = await Promise.all([listSectors(), listPeople(), listEquipment()]);
-      setSectors(s); setPeople(p); setEquipos(e);
+      const [s, p, e, t] = await Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes()]);
+      setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t);
     } catch (err: any) { toast.error("Error cargando catálogos: " + err.message); }
     try {
       const prev = await listPreventives({ activeOnly: true });
@@ -221,11 +222,25 @@ export default function DashboardPage() {
     }));
   }, [filtered]);
 
+  // tipos dinámicos: catálogo activo + tipos históricos que aparecen en datos filtrados
+  const tiposDinamicos = useMemo<string[]>(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    orderTypes.filter((t) => t.active).forEach((t) => {
+      const k = t.name.trim();
+      if (k && !seen.has(k.toLowerCase())) { seen.add(k.toLowerCase()); out.push(k); }
+    });
+    filtered.forEach((o) => {
+      const k = String(o.tipoOrden ?? "").trim();
+      if (k && !seen.has(k.toLowerCase())) { seen.add(k.toLowerCase()); out.push(k); }
+    });
+    return out;
+  }, [orderTypes, filtered]);
+
   // por tipo / sector / prioridad
   const dataTipo = useMemo(() => {
-    const tipos: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
-    return tipos.map((t) => ({ tipo: t, cantidad: filtered.filter((o) => o.tipoOrden === t).length }));
-  }, [filtered]);
+    return tiposDinamicos.map((t) => ({ tipo: t, cantidad: filtered.filter((o) => o.tipoOrden === t).length }));
+  }, [filtered, tiposDinamicos]);
 
   const dataSector = useMemo(() => {
     const m = new Map<string, number>();
@@ -290,8 +305,7 @@ export default function DashboardPage() {
 
   // horas pres vs real por tipo
   const horasPorTipo = useMemo(() => {
-    const tipos: TipoOrden[] = ["Preventivo", "Correctivo", "Edilicio", "Limpieza"];
-    return tipos.map((t) => {
+    return tiposDinamicos.map((t) => {
       const arr = filtered.filter((o) => o.tipoOrden === t);
       return {
         tipo: t,
@@ -299,7 +313,7 @@ export default function DashboardPage() {
         real: arr.reduce((s, o) => s + (Number(o.horasReales) || 0), 0),
       };
     });
-  }, [filtered]);
+  }, [filtered, tiposDinamicos]);
 
   // mayor desvío
   const mayoresDesvios = useMemo(() => {
@@ -446,7 +460,7 @@ export default function DashboardPage() {
             <div>
               <Label className="text-xs">Tipo</Label>
               <SearchSelect value={g.tipo} onChange={(v) => setF("tipo", v as any)}
-                options={[{ value: "Preventivo", label: "Preventivo" }, { value: "Correctivo", label: "Correctivo" }, { value: "Edilicio", label: "Edilicio" }, { value: "Limpieza", label: "Limpieza" }]}
+                options={tiposDinamicos.map((t) => ({ value: t, label: t }))}
                 placeholder="Todos" />
             </div>
             <div>

@@ -1,4 +1,4 @@
-export type TipoOrden = "Preventivo" | "Correctivo" | "Edilicio" | "Limpieza";
+export type TipoOrden = string;
 export type EstadoOrden = "Cumplido" | "Pendiente" | "En proceso";
 export type Prioridad = "Alta" | "Media" | "Baja";
 export type RecepcionEquipo = "APTO" | "NO APTO" | "";

@@ -12,8 +12,8 @@ import { aplicarFiltros } from "@/lib/filterOrdenes";
 import { ArrowLeft, Filter as FilterIcon, RotateCcw } from "lucide-react";
 import { SearchSelect, SearchOption } from "@/components/SearchSelect";
 import {
-  listPeople, listSectors, listEquipment,
-  Person, Sector as SectorCat, Equipment, PersonField,
+  listPeople, listSectors, listEquipment, listOrderTypes,
+  Person, Sector as SectorCat, Equipment, PersonField, OrderType,
 } from "@/lib/catalogos/api";
 import { toast } from "sonner";
 
@@ -116,11 +116,27 @@ export default function FiltrosPage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [sectors, setSectors] = useState<SectorCat[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
   useEffect(() => {
-    Promise.all([listPeople(), listSectors(), listEquipment()])
-      .then(([p, s, e]) => { setPeople(p); setSectors(s); setEquipment(e); })
+    Promise.all([listPeople(), listSectors(), listEquipment(), listOrderTypes()])
+      .then(([p, s, e, t]) => { setPeople(p); setSectors(s); setEquipment(e); setOrderTypes(t); })
       .catch((err) => toast.error("Error cargando catálogos: " + err.message));
   }, []);
+
+  // Tipo options: active catalog types + historical types still present in OITs
+  const optTiposOrden = useMemo<string[]>(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    orderTypes.filter((t) => t.active).forEach((t) => {
+      const k = t.name.trim();
+      if (k && !seen.has(k.toLowerCase())) { seen.add(k.toLowerCase()); out.push(k); }
+    });
+    ordenes.forEach((o) => {
+      const k = String(o.tipoOrden ?? "").trim();
+      if (k && !seen.has(k.toLowerCase())) { seen.add(k.toLowerCase()); out.push(k); }
+    });
+    return out;
+  }, [orderTypes, ordenes]);
 
   // Historic snapshot sets from existing ordenes
   const hist = useMemo(() => {
@@ -304,7 +320,7 @@ export default function FiltrosPage() {
             <SearchSelect value={local.solicitante} onChange={(v) => set("solicitante", v)} options={optSolicitante} placeholder="Seleccionar solicitante..." />
           </F>
           <div className="lg:col-span-2"><F label="Tipo de orden">
-            <MultiCheck<TipoOrden> opciones={["Preventivo","Correctivo","Edilicio","Limpieza"]}
+            <MultiCheck<string> opciones={optTiposOrden}
               valores={local.tipoOrden} onChange={(v) => set("tipoOrden", v)} />
           </F></div>
           <div className="lg:col-span-2"><F label="Estado">

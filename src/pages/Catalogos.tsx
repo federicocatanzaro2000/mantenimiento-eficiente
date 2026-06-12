@@ -13,10 +13,11 @@ import { Plus, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { canManageCatalogos } from "@/lib/permissions";
 import {
-  Sector, Person, Equipment,
+  Sector, Person, Equipment, OrderType,
   listSectors, createSector, updateSector,
   listPeople, createPerson, updatePerson,
   listEquipment, createEquipment, updateEquipment,
+  listOrderTypes, createOrderType, updateOrderType,
 } from "@/lib/catalogos/api";
 
 function Search({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -222,6 +223,120 @@ function EquiposTab({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+function TiposOrdenTab({ canEdit }: { canEdit: boolean }) {
+  const [items, setItems] = useState<OrderType[]>([]);
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<OrderType | null>(null);
+  const [form, setForm] = useState<Omit<OrderType, "id">>({
+    name: "", active: true, sort_order: 0, color: null, description: null,
+    requires_line_stoppage_question: false,
+  });
+  const load = () => listOrderTypes().then(setItems).catch((e) => toast.error(e.message));
+  useEffect(() => { load(); }, []);
+  const openNew = () => {
+    setEdit(null);
+    setForm({
+      name: "", active: true,
+      sort_order: (items.at(-1)?.sort_order ?? 0) + 10,
+      color: null, description: null, requires_line_stoppage_question: false,
+    });
+    setOpen(true);
+  };
+  const openEdit = (t: OrderType) => {
+    setEdit(t);
+    const { id, ...rest } = t;
+    setForm(rest);
+    setOpen(true);
+  };
+  const save = async () => {
+    const name = form.name.trim();
+    if (!name) return toast.error("Nombre obligatorio");
+    const dup = items.some((t) =>
+      t.id !== edit?.id && t.name.trim().toLowerCase() === name.toLowerCase()
+    );
+    if (dup) return toast.error("Ya existe un tipo con ese nombre");
+    try {
+      if (edit) await updateOrderType(edit.id, form);
+      else await createOrderType(form);
+      toast.success("Guardado"); setOpen(false); load();
+    } catch (e: any) {
+      toast.error(e.message?.includes("duplicate") ? "Ya existe un tipo con ese nombre" : e.message);
+    }
+  };
+  const toggle = async (t: OrderType) => {
+    try { await updateOrderType(t.id, { active: !t.active }); load(); }
+    catch (e: any) { toast.error(e.message); }
+  };
+  const filtered = items.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Search value={q} onChange={setQ} />
+        {canEdit && <Button onClick={openNew} className="gap-1"><Plus className="h-4 w-4" /> Agregar tipo</Button>}
+      </div>
+      <div className="border rounded-md overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead className="w-24">Orden</TableHead>
+              <TableHead className="w-28">Color</TableHead>
+              <TableHead className="text-center w-44">Pregunta línea parada</TableHead>
+              <TableHead className="w-24 text-center">Activo</TableHead>
+              <TableHead className="w-16"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Sin resultados</TableCell></TableRow>}
+            {filtered.map((t) => (
+              <TableRow key={t.id}>
+                <TableCell className={!t.active ? "text-muted-foreground line-through" : ""}>{t.name}</TableCell>
+                <TableCell>{t.sort_order}</TableCell>
+                <TableCell>
+                  {t.color ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3 w-3 rounded-sm border border-border" style={{ background: t.color }} />
+                      <span className="text-xs text-muted-foreground">{t.color}</span>
+                    </span>
+                  ) : <span className="text-xs text-muted-foreground">—</span>}
+                </TableCell>
+                <TableCell className="text-center">{t.requires_line_stoppage_question ? "Sí" : "No"}</TableCell>
+                <TableCell className="text-center"><Switch checked={t.active} onCheckedChange={() => toggle(t)} disabled={!canEdit} /></TableCell>
+                <TableCell>{canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(t)}><Pencil className="h-4 w-4" /></Button>}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit ? "Editar tipo de orden" : "Nuevo tipo de orden"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nombre</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Orden</Label><Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) || 0 })} /></div>
+              <div>
+                <Label>Color (opcional)</Label>
+                <Input type="text" placeholder="#1e90ff o hsl(...)" value={form.color ?? ""} onChange={(e) => setForm({ ...form, color: e.target.value || null })} />
+              </div>
+            </div>
+            <div><Label>Descripción (opcional)</Label><Input value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value || null })} /></div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={form.requires_line_stoppage_question} onCheckedChange={(v) => setForm({ ...form, requires_line_stoppage_question: !!v })} />
+              Requiere preguntar "¿Se paró la línea?" en la OIT
+            </label>
+            <label className="flex items-center gap-2 text-sm pt-2 border-t">
+              <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} /> Activo
+            </label>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={save}>Guardar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function Catalogos() {
   const { roles } = useAuth();
   const canEdit = canManageCatalogos(roles);
@@ -233,10 +348,12 @@ export default function Catalogos() {
           <TabsTrigger value="sectores">Sectores</TabsTrigger>
           <TabsTrigger value="personas">Personas</TabsTrigger>
           <TabsTrigger value="equipos">Equipos / Máquinas</TabsTrigger>
+          <TabsTrigger value="tipos">Tipos de orden</TabsTrigger>
         </TabsList>
         <TabsContent value="sectores" className="mt-4"><SectoresTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="personas" className="mt-4"><PersonasTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="equipos" className="mt-4"><EquiposTab canEdit={canEdit} /></TabsContent>
+        <TabsContent value="tipos" className="mt-4"><TiposOrdenTab canEdit={canEdit} /></TabsContent>
       </Tabs>
     </AppLayout>
   );
