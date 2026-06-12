@@ -261,7 +261,16 @@ export default function OrdenForm() {
             <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
-                {["Preventivo", "Correctivo", "Edilicio", "Limpieza"].map((x) => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+                {(() => {
+                  const activos = orderTypes.filter((t) => t.active);
+                  const currentVal = String(orden.tipoOrden ?? "").trim();
+                  const hasCurrent = !!currentVal && activos.some((t) => t.name.trim().toLowerCase() === currentVal.toLowerCase());
+                  const items = [...activos.map((t) => ({ key: t.id, value: t.name, label: t.name }))];
+                  if (currentVal && !hasCurrent) {
+                    items.push({ key: `legacy-${currentVal}`, value: currentVal, label: `${currentVal} (inactivo)` });
+                  }
+                  return items.map((x) => <SelectItem key={x.key} value={x.value}>{x.label}</SelectItem>);
+                })()}
               </SelectContent>
             </Select>
           </Field>
@@ -301,7 +310,7 @@ export default function OrdenForm() {
             <Input type="number" min={0} value={orden.horasReales}
               onChange={(e) => set("horasReales", e.target.value === "" ? "" : Number(e.target.value))} />
           </Field>
-          {orden.tipoOrden === "Correctivo" && (
+          {requiresLineStoppage && (
             <>
               <Field label="¿Se paró la línea?" required>
                 <div className="flex gap-4 h-10 items-center">
