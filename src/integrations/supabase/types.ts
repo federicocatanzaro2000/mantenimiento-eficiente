@@ -613,6 +613,65 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_attachments: {
+        Row: {
+          active: boolean
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          original_file_name: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+          work_order_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          original_file_name: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          work_order_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          original_file_name?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_attachments_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
