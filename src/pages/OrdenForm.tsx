@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 import { Combobox, ComboboxOption } from "@/components/Combobox";
-import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
+import { listSectors, listPeople, listEquipment, listOrderTypes, Sector, Person, Equipment, OrderType } from "@/lib/catalogos/api";
 import { PrintableOrden } from "@/components/PrintableOrden";
 import { OrdenAttachments } from "@/components/OrdenAttachments";
 import { Attachment } from "@/lib/attachments/api";
