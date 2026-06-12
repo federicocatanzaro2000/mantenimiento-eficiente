@@ -58,7 +58,9 @@ export const useOrdenesStore = create<State>()((set, get) => ({
 
   updateOrden: async (id, o) => {
     const saved = await updateOrdenDb(id, o);
-    set({ ordenes: get().ordenes.map((x) => x.id === id ? saved : x) });
+    const prev = get().ordenes.find((x) => x.id === id);
+    const merged = { ...saved, attachmentsCount: prev?.attachmentsCount ?? 0 };
+    set({ ordenes: get().ordenes.map((x) => x.id === id ? merged : x) });
     return saved;
   },
 
