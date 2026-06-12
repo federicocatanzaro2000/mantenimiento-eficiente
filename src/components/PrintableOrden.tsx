@@ -1,4 +1,5 @@
 import { Orden } from "@/types/orden";
+import { Attachment } from "@/lib/attachments/api";
 import logo from "@/assets/logo-incalfood.png";
 
 const dash = (v: any) => {
@@ -26,7 +27,7 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
   );
 }
 
-export function PrintableOrden({ orden }: { orden: Orden }) {
+export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; attachments?: Attachment[] }) {
   const now = new Date();
   const printedAt =
     now.toLocaleDateString("es-AR") + " " + now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });

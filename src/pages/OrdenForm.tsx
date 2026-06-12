@@ -471,6 +471,25 @@ export default function OrdenForm() {
           </Field>
         </Section>
 
+        <div className="bg-card border border-border rounded-md shadow-sm no-print">
+          <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md">
+            <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">
+              7. Archivos adjuntos
+            </h2>
+          </div>
+          <div className="p-4">
+            <OrdenAttachments
+              workOrderId={isEdit ? orden.id : null}
+              canEdit={canEditAny(roles)}
+              canDelete={canEditAny(roles)}
+              onListChange={(items) => {
+                setAttachments(items);
+                if (isEdit) refreshAttachmentCounts();
+              }}
+            />
+          </div>
+        </div>
+
         <div className="flex justify-end gap-2 pt-2 no-print">
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>
           {puedeGuardar && (
