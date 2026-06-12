@@ -461,7 +461,7 @@ export default function DashboardPage() {
             <div>
               <Label className="text-xs">Tipo</Label>
               <SearchSelect value={g.tipo} onChange={(v) => setF("tipo", v as any)}
-                options={[{ value: "Preventivo", label: "Preventivo" }, { value: "Correctivo", label: "Correctivo" }, { value: "Edilicio", label: "Edilicio" }, { value: "Limpieza", label: "Limpieza" }]}
+                options={tiposDinamicos.map((t) => ({ value: t, label: t }))}
                 placeholder="Todos" />
             </div>
             <div>
