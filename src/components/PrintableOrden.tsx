@@ -175,6 +175,24 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
             </div>
           </div>
         </section>
+
+        {/* 7. Archivos adjuntos */}
+        <section className="po-section po-s-adj">
+          <SectionTitle n={7} title="Archivos adjuntos" />
+          <div className="po-grid po-grid-1">
+            <F label="Tiene archivos adjuntos" value={attachments.length > 0 ? `Sí (${attachments.length})` : "No"} />
+          </div>
+          {attachments.length > 0 && (
+            <ul className="po-attach-list">
+              {attachments.map((a) => (
+                <li key={a.id}>
+                  <span className="po-attach-name">{a.originalFileName}</span>
+                  <span className="po-attach-type"> — {a.mimeType.startsWith("image/") ? "Imagen" : "PDF"}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
 
       <footer className="po-footer">
