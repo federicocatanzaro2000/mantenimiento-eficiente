@@ -102,12 +102,13 @@ export default function OrdenForm() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
+  const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
-    Promise.all([listSectors(), listPeople(), listEquipment()])
-      .then(([s, p, e]) => { setSectors(s); setPeople(p); setEquipos(e); })
+    Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes()])
+      .then(([s, p, e, t]) => { setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t); })
       .catch(() => { /* silencioso, los campos seguirán mostrando snapshot */ });
   }, []);
 
@@ -146,6 +147,13 @@ export default function OrdenForm() {
     set("materialesUtilizados", orden.materialesUtilizados.map((m, idx) => idx === i ? { ...m, ...patch } : m));
   const delMat = (i: number) => set("materialesUtilizados", orden.materialesUtilizados.filter((_, idx) => idx !== i));
 
+  // Lookup selected order type metadata (falls back to legacy name match for historical OITs)
+  const selectedType = orden.tipoOrden
+    ? orderTypes.find((t) => t.name.trim().toLowerCase() === String(orden.tipoOrden).trim().toLowerCase())
+    : undefined;
+  const requiresLineStoppage =
+    selectedType?.requires_line_stoppage_question ?? (orden.tipoOrden === "Correctivo");
+
   const validar = (): string | null => {
     if (!orden.nroOrden) return "Nro. de orden obligatorio";
     if (!orden.fechaCreacion) return "Fecha de creación obligatoria";
@@ -154,7 +162,7 @@ export default function OrdenForm() {
     if (!orden.estado) return "Estado obligatorio";
     if (!orden.prioridad) return "Prioridad obligatoria";
     if (Number(orden.horasPresupuestadas) < 0 || Number(orden.horasReales) < 0) return "Las horas no pueden ser negativas";
-    if (orden.tipoOrden === "Correctivo") {
+    if (requiresLineStoppage) {
       if (orden.lineStopped === null) return "Indicar si se paró la línea.";
       if (orden.lineStopped === true) {
         if (orden.lineStoppedHours === "" || orden.lineStoppedHours === null) return "Cargar las horas de línea parada.";
@@ -164,12 +172,12 @@ export default function OrdenForm() {
     return null;
   };
 
-  const setTipoOrden = (v: any) => {
+  const setTipoOrden = (v: string) => {
+    const next = orderTypes.find((t) => t.name.trim().toLowerCase() === v.trim().toLowerCase());
+    const needs = next?.requires_line_stoppage_question ?? (v === "Correctivo");
     setOrden((o) => {
       if (!o) return o;
-      if (v !== "Correctivo") {
-        return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
-      }
+      if (!needs) return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
       return { ...o, tipoOrden: v };
     });
   };
