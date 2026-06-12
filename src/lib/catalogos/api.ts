@@ -75,3 +75,23 @@ export async function updateEquipment(id: string, patch: Partial<Pick<Equipment,
   const { error } = await supabase.from("equipment").update(patch).eq("id", id);
   if (error) throw error;
 }
+
+// ORDER TYPES
+export async function listOrderTypes(activeOnly = false): Promise<OrderType[]> {
+  let q = (supabase as any).from("order_types").select("*").order("sort_order").order("name");
+  if (activeOnly) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as OrderType[];
+}
+export async function createOrderType(p: Omit<OrderType, "id">) {
+  const { error } = await (supabase as any).from("order_types").insert({
+    ...p, name: p.name.trim(),
+  });
+  if (error) throw error;
+}
+export async function updateOrderType(id: string, patch: Partial<Omit<OrderType, "id">>) {
+  if (patch.name) patch.name = patch.name.trim();
+  const { error } = await (supabase as any).from("order_types").update(patch).eq("id", id);
+  if (error) throw error;
+}
