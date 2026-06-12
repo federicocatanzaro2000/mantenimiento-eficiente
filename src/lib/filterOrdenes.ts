@@ -50,6 +50,9 @@ export function aplicarFiltros(ordenes: Orden[], f: Filtros): Orden[] {
     if (f.lineStopped === "Si" && o.lineStopped !== true) return false;
     if (f.lineStopped === "No" && o.lineStopped !== false) return false;
     if (!numIn(o.lineStoppedHours, f.lineStoppedHorasMin, f.lineStoppedHorasMax)) return false;
+    const n = o.attachmentsCount ?? 0;
+    if (f.attachments === "Con" && n <= 0) return false;
+    if (f.attachments === "Sin" && n > 0) return false;
     return true;
   });
 }

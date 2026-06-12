@@ -43,6 +43,7 @@ export interface Orden {
   aprobo: string;
   lineStopped: boolean | null;
   lineStoppedHours: number | "";
+  attachmentsCount?: number;
   createdAt: string;
   updatedAt: string;
   createdBy?: string | null;
@@ -84,6 +85,7 @@ export interface Filtros {
   lineStopped: "Todos" | "Si" | "No";
   lineStoppedHorasMin: string;
   lineStoppedHorasMax: string;
+  attachments: "Todos" | "Con" | "Sin";
 }
 
 export const filtrosVacios: Filtros = {
@@ -105,4 +107,5 @@ export const filtrosVacios: Filtros = {
   controlCalidad: "Todos",
   responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
   lineStopped: "Todos", lineStoppedHorasMin: "", lineStoppedHorasMax: "",
+  attachments: "Todos",
 };

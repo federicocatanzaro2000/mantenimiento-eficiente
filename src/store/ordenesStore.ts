@@ -3,6 +3,7 @@ import { Orden, Filtros, filtrosVacios } from "@/types/orden";
 import {
   fetchOrdenes, insertOrden, updateOrdenDb, deleteOrdenDb, fetchProfilesMap,
 } from "@/lib/ordenesApi";
+import { fetchAttachmentCounts } from "@/lib/attachments/api";
 
 interface State {
   ordenes: Orden[];
@@ -11,6 +12,7 @@ interface State {
   loading: boolean;
   filtros: Filtros;
   loadAll: () => Promise<void>;
+  refreshAttachmentCounts: () => Promise<void>;
   addOrden: (o: Orden) => Promise<Orden>;
   updateOrden: (id: string, o: Orden) => Promise<Orden>;
   deleteOrden: (id: string) => Promise<void>;
@@ -31,16 +33,26 @@ export const useOrdenesStore = create<State>()((set, get) => ({
     if (get().loading) return;
     set({ loading: true });
     try {
-      const [ordenes, profilesMap] = await Promise.all([fetchOrdenes(), fetchProfilesMap()]);
-      set({ ordenes, profilesMap, loaded: true });
+      const [ordenes, profilesMap, counts] = await Promise.all([
+        fetchOrdenes(),
+        fetchProfilesMap(),
+        fetchAttachmentCounts(),
+      ]);
+      const merged = ordenes.map((o) => ({ ...o, attachmentsCount: counts[o.id] ?? 0 }));
+      set({ ordenes: merged, profilesMap, loaded: true });
     } finally {
       set({ loading: false });
     }
   },
 
+  refreshAttachmentCounts: async () => {
+    const counts = await fetchAttachmentCounts();
+    set({ ordenes: get().ordenes.map((o) => ({ ...o, attachmentsCount: counts[o.id] ?? 0 })) });
+  },
+
   addOrden: async (o) => {
     const saved = await insertOrden(o);
-    set({ ordenes: [saved, ...get().ordenes] });
+    set({ ordenes: [{ ...saved, attachmentsCount: 0 }, ...get().ordenes] });
     return saved;
   },
 
