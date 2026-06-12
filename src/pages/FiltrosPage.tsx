@@ -364,6 +364,16 @@ export default function FiltrosPage() {
             <RangoNum min={local.lineStoppedHorasMin} max={local.lineStoppedHorasMax}
               onMin={(v: string) => set("lineStoppedHorasMin", v)} onMax={(v: string) => set("lineStoppedHorasMax", v)} />
           </F>
+          <F label="Archivos adjuntos">
+            <Select value={local.attachments} onValueChange={(v) => set("attachments", v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos</SelectItem>
+                <SelectItem value="Con">Con archivos adjuntos</SelectItem>
+                <SelectItem value="Sin">Sin archivos adjuntos</SelectItem>
+              </SelectContent>
+            </Select>
+          </F>
         </Section>
 
         <Section title="Calidad y aprobaciones">

@@ -20,6 +20,9 @@ import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/pe
 import { Combobox, ComboboxOption } from "@/components/Combobox";
 import { listSectors, listPeople, listEquipment, Sector, Person, Equipment } from "@/lib/catalogos/api";
 import { PrintableOrden } from "@/components/PrintableOrden";
+import { OrdenAttachments } from "@/components/OrdenAttachments";
+import { Attachment } from "@/lib/attachments/api";
+import { useOrdenesStore as useStoreForCounts } from "@/store/ordenesStore";
 
 const handlePrint = (orden: Orden) => {
   const filename = orden.nroOrden ? `INCALFOOD OIT ${orden.nroOrden}` : "INCALFOOD OIT SIN NUMERO";
@@ -99,6 +102,8 @@ export default function OrdenForm() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
     Promise.all([listSectors(), listPeople(), listEquipment()])
@@ -215,7 +220,7 @@ export default function OrdenForm() {
         </div>
       )}
 
-      <PrintableOrden orden={orden} />
+      <PrintableOrden orden={orden} attachments={attachments} />
 
 
       <div className="space-y-4">
@@ -465,6 +470,25 @@ export default function OrdenForm() {
               allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
         </Section>
+
+        <div className="bg-card border border-border rounded-md shadow-sm no-print">
+          <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md">
+            <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">
+              7. Archivos adjuntos
+            </h2>
+          </div>
+          <div className="p-4">
+            <OrdenAttachments
+              workOrderId={isEdit ? orden.id : null}
+              canEdit={canEditAny(roles)}
+              canDelete={canEditAny(roles)}
+              onListChange={(items) => {
+                setAttachments(items);
+                if (isEdit) refreshAttachmentCounts();
+              }}
+            />
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 pt-2 no-print">
           <Button variant="outline" onClick={() => navigate("/")}>Cancelar</Button>

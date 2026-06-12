@@ -1,4 +1,5 @@
 import { Orden } from "@/types/orden";
+import { Attachment } from "@/lib/attachments/api";
 import logo from "@/assets/logo-incalfood.png";
 
 const dash = (v: any) => {
@@ -26,7 +27,7 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
   );
 }
 
-export function PrintableOrden({ orden }: { orden: Orden }) {
+export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; attachments?: Attachment[] }) {
   const now = new Date();
   const printedAt =
     now.toLocaleDateString("es-AR") + " " + now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -173,6 +174,24 @@ export function PrintableOrden({ orden }: { orden: Orden }) {
               <div className="po-sign-line">Firma</div>
             </div>
           </div>
+        </section>
+
+        {/* 7. Archivos adjuntos */}
+        <section className="po-section po-s-adj">
+          <SectionTitle n={7} title="Archivos adjuntos" />
+          <div className="po-grid po-grid-1">
+            <F label="Tiene archivos adjuntos" value={attachments.length > 0 ? `Sí (${attachments.length})` : "No"} />
+          </div>
+          {attachments.length > 0 && (
+            <ul className="po-attach-list">
+              {attachments.map((a) => (
+                <li key={a.id}>
+                  <span className="po-attach-name">{a.originalFileName}</span>
+                  <span className="po-attach-type"> — {a.mimeType.startsWith("image/") ? "Imagen" : "PDF"}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
 
