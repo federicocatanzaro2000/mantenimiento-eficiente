@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AprobadoBadge, EstadoBadge, PrioridadBadge } from "@/components/StatusBadges";
-import { ArrowUpDown, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, Paperclip, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { canCreateOrden, canDeleteOrden } from "@/lib/permissions";
 import { toast } from "sonner";
 
-type SortKey = keyof Orden | "aprobadoLabel";
+type SortKey = keyof Orden | "aprobadoLabel" | "attachmentsCount";
 
 export default function Listado() {
   const { ordenes, loadAll, loaded, loading, deleteOrden } = useOrdenesStore();
@@ -136,13 +136,14 @@ export default function Listado() {
                 <Th k="prioridad">Prioridad</Th>
                 <Th k="horasPresupuestadas">Hs. Presup.</Th>
                 <Th k="horasReales">Hs. Reales</Th>
+                <Th k="attachmentsCount">Adj.</Th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>}
+              {loading && <tr><td colSpan={13} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={11} className="text-center py-8 text-muted-foreground">Sin resultados</td></tr>
+                <tr><td colSpan={13} className="text-center py-8 text-muted-foreground">Sin resultados</td></tr>
               )}
               {filtered.map((o) => (
                 <tr key={o.id} className="cursor-pointer" onClick={() => navigate(`/orden/${o.id}`)}>
@@ -157,6 +158,15 @@ export default function Listado() {
                   <td><PrioridadBadge prioridad={o.prioridad} /></td>
                   <td className="text-right tabular-nums">{o.horasPresupuestadas}</td>
                   <td className="text-right tabular-nums">{o.horasReales}</td>
+                  <td className="text-center">
+                    {(o.attachmentsCount ?? 0) > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" title={`${o.attachmentsCount} adjunto(s)`}>
+                        <Paperclip className="h-3.5 w-3.5" />{o.attachmentsCount}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-1">
                       <Button size="icon" variant="ghost" onClick={() => navigate(`/orden/${o.id}`)} title="Ver/Editar">
