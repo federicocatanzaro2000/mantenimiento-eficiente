@@ -169,6 +169,42 @@ export type Database = {
           },
         ]
       }
+      order_types: {
+        Row: {
+          active: boolean
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          requires_line_stoppage_question: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          requires_line_stoppage_question?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          requires_line_stoppage_question?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       people: {
         Row: {
           active: boolean
