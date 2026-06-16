@@ -1,8 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
 import { aplicarFiltros } from "@/lib/filterOrdenes";
+import { paramsToFilters, hasActiveFilters } from "@/lib/filtersUrl";
+import { filtrosVacios } from "@/types/orden";
 import { Button } from "@/components/ui/button";
 import { AprobadoBadge, CalidadBadge, EstadoBadge, PrioridadBadge } from "@/components/StatusBadges";
 import { ArrowLeft, Download, Eye, Filter as FilterIcon, Printer, RotateCcw } from "lucide-react";
