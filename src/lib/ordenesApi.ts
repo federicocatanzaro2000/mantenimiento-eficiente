@@ -72,6 +72,7 @@ function ordenToRow(o: Orden) {
     materiales_utilizados: o.materialesUtilizados as any,
     control_liberacion_calidad: o.controlLiberacionCalidad,
     responsable_control_calidad: o.responsableControlCalidad,
+    comentario_calidad: o.comentarioCalidad ?? "",
     elaboro: o.elaboro,
     reviso: o.reviso,
     aprobo: o.aprobo,
