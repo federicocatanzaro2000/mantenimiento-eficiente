@@ -31,6 +31,7 @@ export function rowToOrden(r: any): Orden {
     materialesUtilizados: (r.materiales_utilizados ?? []) as Material[],
     controlLiberacionCalidad: !!r.control_liberacion_calidad,
     responsableControlCalidad: r.responsable_control_calidad ?? "",
+    comentarioCalidad: r.comentario_calidad ?? "",
     elaboro: r.elaboro ?? "",
     reviso: r.reviso ?? "",
     aprobo: r.aprobo ?? "",
