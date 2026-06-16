@@ -38,7 +38,7 @@ export interface Orden {
   materialesUtilizados: Material[];
   controlLiberacionCalidad: boolean;
   responsableControlCalidad: string;
-  comentarioCalidad: string;
+  comentarioCalidad?: string;
   elaboro: string;
   reviso: string;
   aprobo: string;
