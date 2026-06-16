@@ -75,9 +75,13 @@ export default function ResultadosPage() {
   // Keep store in sync with URL so /filtros precarga correctly when navigating back.
   useEffect(() => {
     if (Array.from(searchParams.keys()).length > 0) {
-      setFiltros(activeFiltros);
+      const current = useOrdenesStore.getState().filtros;
+      if (JSON.stringify(current) !== JSON.stringify(activeFiltros)) {
+        setFiltros(activeFiltros);
+      }
     }
-  }, [searchParams, activeFiltros, setFiltros]);
+     
+  }, [searchParams]);
 
   const resultados = useMemo(() => aplicarFiltros(ordenes, activeFiltros), [ordenes, activeFiltros]);
 
