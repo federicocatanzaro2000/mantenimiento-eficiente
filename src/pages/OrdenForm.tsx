@@ -486,6 +486,16 @@ export default function OrdenForm() {
               value={orden.aprobo} onChange={(v) => set("aprobo", v)} disabled={!can6}
               allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
+          <div className="md:col-span-2 lg:col-span-3">
+            <Field label="Comentario">
+              <Textarea
+                rows={3}
+                value={orden.comentarioCalidad ?? ""}
+                onChange={(e) => set("comentarioCalidad", e.target.value)}
+                placeholder="Comentarios de calidad / aprobación..."
+              />
+            </Field>
+          </div>
         </Section>
 
         <div className="bg-card border border-border rounded-md shadow-sm no-print">
