@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
 import { Filtros, filtrosVacios, EstadoOrden, Prioridad, TipoOrden } from "@/types/orden";
+import { filtersToParams, paramsToFilters, hasActiveFilters } from "@/lib/filtersUrl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,9 +107,17 @@ function buildSectorOptions(sectors: SectorCat[], historic: Set<string>): Search
 
 export default function FiltrosPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { ordenes, filtros, setFiltros, resetFiltros, loaded, loadAll } = useOrdenesStore();
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
-  const [local, setLocal] = useState<Filtros>(filtros);
+  // Source of truth on entry: URL params > store filtros > vacios
+  const initial = useMemo<Filtros>(() => {
+    if (Array.from(searchParams.keys()).length > 0) return paramsToFilters(searchParams);
+    if (hasActiveFilters(filtros)) return filtros;
+    return filtrosVacios;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [local, setLocal] = useState<Filtros>(initial);
   const set = <K extends keyof Filtros>(k: K, v: Filtros[K]) => setLocal((p) => ({ ...p, [k]: v }));
   const preview = useMemo(() => aplicarFiltros(ordenes, local).length, [ordenes, local]);
 
@@ -269,8 +278,17 @@ export default function FiltrosPage() {
     });
   };
 
-  const aplicar = () => { setFiltros(local); navigate("/resultados"); };
-  const limpiar = () => { setLocal(filtrosVacios); resetFiltros(); };
+  const aplicar = () => {
+    setFiltros(local);
+    const sp = filtersToParams(local);
+    const qs = sp.toString();
+    navigate(qs ? `/resultados?${qs}` : "/resultados");
+  };
+  const limpiar = () => {
+    setLocal(filtrosVacios);
+    resetFiltros();
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   return (
     <AppLayout>
