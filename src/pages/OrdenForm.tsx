@@ -54,7 +54,7 @@ const empty = (nro: number): Orden => ({
   solicitante: "", trabajoSolicitado: "", estadoRecepcionEquipo: "",
   observaciones: "", sectorLimpioOrdenado: false, herramientasLimpiasOrdenadas: false,
   materialesUtilizados: [], controlLiberacionCalidad: false,
-  responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
+  responsableControlCalidad: "", comentarioCalidad: "", elaboro: "", reviso: "", aprobo: "",
   lineStopped: null, lineStoppedHours: "",
   createdAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString().slice(0, 10),
