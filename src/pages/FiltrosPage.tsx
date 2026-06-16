@@ -107,9 +107,17 @@ function buildSectorOptions(sectors: SectorCat[], historic: Set<string>): Search
 
 export default function FiltrosPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { ordenes, filtros, setFiltros, resetFiltros, loaded, loadAll } = useOrdenesStore();
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
-  const [local, setLocal] = useState<Filtros>(filtros);
+  // Source of truth on entry: URL params > store filtros > vacios
+  const initial = useMemo<Filtros>(() => {
+    if (Array.from(searchParams.keys()).length > 0) return paramsToFilters(searchParams);
+    if (hasActiveFilters(filtros)) return filtros;
+    return filtrosVacios;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [local, setLocal] = useState<Filtros>(initial);
   const set = <K extends keyof Filtros>(k: K, v: Filtros[K]) => setLocal((p) => ({ ...p, [k]: v }));
   const preview = useMemo(() => aplicarFiltros(ordenes, local).length, [ordenes, local]);
 
