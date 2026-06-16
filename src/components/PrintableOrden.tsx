@@ -157,6 +157,9 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
             <F label="Control / Liberación Calidad" value={yn(orden.controlLiberacionCalidad)} />
             <F label="Resp. Control de Calidad" value={dash(orden.responsableControlCalidad)} />
           </div>
+          <div className="po-grid po-grid-1">
+            <F label="Comentario" value={<div className="po-text po-text-mid">{dash(orden.comentarioCalidad)}</div>} />
+          </div>
           <div className="po-signs">
             <div className="po-sign">
               <div className="po-sign-label">Elaboró</div>
