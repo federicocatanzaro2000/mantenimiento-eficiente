@@ -278,8 +278,17 @@ export default function FiltrosPage() {
     });
   };
 
-  const aplicar = () => { setFiltros(local); navigate("/resultados"); };
-  const limpiar = () => { setLocal(filtrosVacios); resetFiltros(); };
+  const aplicar = () => {
+    setFiltros(local);
+    const sp = filtersToParams(local);
+    const qs = sp.toString();
+    navigate(qs ? `/resultados?${qs}` : "/resultados");
+  };
+  const limpiar = () => {
+    setLocal(filtrosVacios);
+    resetFiltros();
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   return (
     <AppLayout>
