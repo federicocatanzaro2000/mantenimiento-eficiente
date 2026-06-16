@@ -60,15 +60,42 @@ function exportCSV(rows: Orden[]) {
 
 export default function ResultadosPage() {
   const navigate = useNavigate();
-  const { ordenes, filtros, resetFiltros, loaded, loadAll } = useOrdenesStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { ordenes, filtros, setFiltros, resetFiltros, loaded, loadAll } = useOrdenesStore();
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
-  const resultados = useMemo(() => aplicarFiltros(ordenes, filtros), [ordenes, filtros]);
+
+  // Single source of truth: URL params. Fall back to store filtros only when URL has none.
+  const activeFiltros = useMemo(() => {
+    const hasParams = Array.from(searchParams.keys()).length > 0;
+    if (hasParams) return paramsToFilters(searchParams);
+    if (hasActiveFilters(filtros)) return filtros;
+    return filtrosVacios;
+  }, [searchParams, filtros]);
+
+  // Keep store in sync with URL so /filtros precarga correctly when navigating back.
+  useEffect(() => {
+    if (Array.from(searchParams.keys()).length > 0) {
+      setFiltros(activeFiltros);
+    }
+  }, [searchParams, activeFiltros, setFiltros]);
+
+  const resultados = useMemo(() => aplicarFiltros(ordenes, activeFiltros), [ordenes, activeFiltros]);
 
   const totals = useMemo(() => {
     const pres = resultados.reduce((s, o) => s + (Number(o.horasPresupuestadas) || 0), 0);
     const real = resultados.reduce((s, o) => s + (Number(o.horasReales) || 0), 0);
     return { pres, real, dif: real - pres };
   }, [resultados]);
+
+  const goBackToFiltros = () => {
+    const qs = searchParams.toString();
+    navigate(qs ? `/filtros?${qs}` : "/filtros");
+  };
+
+  const limpiarFiltros = () => {
+    resetFiltros();
+    setSearchParams(new URLSearchParams(), { replace: true });
+  };
 
   return (
     <AppLayout>
@@ -78,12 +105,13 @@ export default function ResultadosPage() {
           <h2 className="text-xl font-semibold">Resultados filtrados</h2>
         </div>
         <div className="flex gap-2 no-print">
-          <Button variant="outline" onClick={() => navigate("/filtros")} className="gap-2"><FilterIcon className="h-4 w-4" />Volver a filtros</Button>
-          <Button variant="outline" onClick={() => { resetFiltros(); }} className="gap-2"><RotateCcw className="h-4 w-4" />Limpiar filtros</Button>
+          <Button variant="outline" onClick={goBackToFiltros} className="gap-2"><FilterIcon className="h-4 w-4" />Volver a filtros</Button>
+          <Button variant="outline" onClick={limpiarFiltros} className="gap-2"><RotateCcw className="h-4 w-4" />Limpiar filtros</Button>
           <Button variant="outline" onClick={() => window.print()} className="gap-2"><Printer className="h-4 w-4" />Imprimir / PDF</Button>
           <Button onClick={() => exportCSV(resultados)} className="gap-2"><Download className="h-4 w-4" />Exportar CSV</Button>
         </div>
       </div>
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
