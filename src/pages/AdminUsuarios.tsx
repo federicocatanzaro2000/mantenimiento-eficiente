@@ -38,11 +38,12 @@ export default function AdminUsuarios() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profs }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("user_id,nombre,email,activo").order("nombre"),
+    const [listRes, { data: roles }] = await Promise.all([
+      supabase.functions.invoke("admin-usuarios", { body: { action: "list" } }),
       supabase.from("user_roles").select("user_id,role"),
     ]);
-    setProfiles((profs ?? []) as Profile[]);
+    const users = ((listRes.data as any)?.users ?? []) as Profile[];
+    setProfiles(users);
     const map: Record<string, AppRole[]> = {};
     (roles ?? []).forEach((r: any) => {
       (map[r.user_id] ||= []).push(r.role as AppRole);

@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 type Action =
+  | { action: "list" }
   | { action: "create"; email: string; password: string; nombre: string; roles: string[] }
   | { action: "update_password"; user_id: string; password: string }
   | { action: "set_active"; user_id: string; activo: boolean }
@@ -48,6 +49,23 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as Action;
 
     switch (body.action) {
+      case "list": {
+        const { data: usersList, error: usersErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        if (usersErr) return json({ error: usersErr.message }, 400);
+        const { data: profs } = await admin.from("profiles").select("user_id,nombre,activo");
+        const profMap = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+        const items = (usersList?.users ?? []).map((u) => {
+          const p = profMap.get(u.id) as any;
+          return {
+            user_id: u.id,
+            email: u.email ?? null,
+            nombre: p?.nombre ?? (u.user_metadata?.nombre ?? (u.email?.split("@")[0] ?? "")),
+            activo: p?.activo ?? true,
+          };
+        });
+        items.sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+        return json({ users: items });
+      }
       case "create": {
         if (!body.email || !body.password) return json({ error: "Email y contraseña requeridos" }, 400);
         if (body.password.length < 6) return json({ error: "La contraseña debe tener al menos 6 caracteres" }, 400);
