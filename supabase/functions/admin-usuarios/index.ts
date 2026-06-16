@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 type Action =
+  | { action: "list" }
   | { action: "create"; email: string; password: string; nombre: string; roles: string[] }
   | { action: "update_password"; user_id: string; password: string }
   | { action: "set_active"; user_id: string; activo: boolean }
