@@ -47,6 +47,7 @@ export type Database = {
           aprobo: string | null
           codigo_documento: string | null
           codigo_equipo: string | null
+          comentario_calidad: string | null
           control_liberacion_calidad: boolean
           created_at: string
           created_by: string | null
@@ -86,6 +87,7 @@ export type Database = {
           aprobo?: string | null
           codigo_documento?: string | null
           codigo_equipo?: string | null
+          comentario_calidad?: string | null
           control_liberacion_calidad?: boolean
           created_at?: string
           created_by?: string | null
@@ -125,6 +127,7 @@ export type Database = {
           aprobo?: string | null
           codigo_documento?: string | null
           codigo_equipo?: string | null
+          comentario_calidad?: string | null
           control_liberacion_calidad?: boolean
           created_at?: string
           created_by?: string | null
