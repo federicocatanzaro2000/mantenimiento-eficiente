@@ -212,3 +212,251 @@ export async function duplicateYear(params: { from: number; to: number; mode: "f
   }
   return bulkUpsertPreventives(inputs);
 }
+
+// ============================================================
+// RECURRENCIA
+// ============================================================
+
+function buildOccurrenceRow(parent: PreventiveItem, dateISO: string) {
+  return {
+    scheduled_date: dateISO,
+    scheduled_year: Number(dateISO.slice(0, 4)),
+    scheduled_month: Number(dateISO.slice(5, 7)),
+    scheduled_day: Number(dateISO.slice(8, 10)),
+    equipment_id: parent.equipment_id,
+    equipment_code_snapshot: parent.equipment_code_snapshot,
+    equipment_name_snapshot: parent.equipment_name_snapshot,
+    task_name: parent.task_name,
+    preventive_type: parent.preventive_type,
+    frequency_label: parent.frequency_label,
+    status: "Programado" as PreventiveStatus,
+    responsible_id: parent.responsible_id,
+    estimated_hours: parent.estimated_hours,
+    notes: parent.notes,
+    source: "manual" as const,
+    recurrence_parent_id: parent.id,
+    is_recurrence_parent: false,
+    repeat_enabled: false,
+  };
+}
+
+async function insertOccurrencesIgnoringDuplicates(parent: PreventiveItem, dates: string[]): Promise<number> {
+  let inserted = 0;
+  for (const iso of dates) {
+    const { error } = await supabase
+      .from("preventive_manual_items")
+      .insert(buildOccurrenceRow(parent, iso));
+    if (!error) inserted++;
+    // Conflicto contra el índice único = duplicado esperado → ignorar
+  }
+  return inserted;
+}
+
+/**
+ * Crea un preventivo. Si recurrence.repeat_enabled, lo marca como padre
+ * y genera ocurrencias futuras hasta hoy+24 meses (o hasta el fin de la regla).
+ */
+export async function createPreventiveWithRecurrence(
+  input: PreventiveItemInput,
+  recurrence: RecurrenceInput,
+): Promise<PreventiveItem> {
+  const parentRow: any = {
+    scheduled_date: input.scheduled_date,
+    scheduled_year: Number(input.scheduled_date.slice(0, 4)),
+    scheduled_month: Number(input.scheduled_date.slice(5, 7)),
+    scheduled_day: Number(input.scheduled_date.slice(8, 10)),
+    equipment_id: input.equipment_id ?? null,
+    equipment_code_snapshot: input.equipment_code_snapshot,
+    equipment_name_snapshot: input.equipment_name_snapshot,
+    task_name: input.task_name,
+    preventive_type: input.preventive_type,
+    frequency_label: input.frequency_label ?? null,
+    status: input.status ?? "Programado",
+    responsible_id: input.responsible_id ?? null,
+    estimated_hours: input.estimated_hours ?? null,
+    notes: input.notes ?? null,
+    source: input.source ?? "manual",
+    repeat_enabled: !!recurrence.repeat_enabled,
+    is_recurrence_parent: !!recurrence.repeat_enabled,
+    repeat_every: recurrence.repeat_enabled ? recurrence.repeat_every ?? null : null,
+    repeat_unit: recurrence.repeat_enabled ? recurrence.repeat_unit ?? null : null,
+    repeat_end_mode: recurrence.repeat_enabled ? recurrence.repeat_end_mode ?? "never" : null,
+    repeat_end_date: recurrence.repeat_enabled ? recurrence.repeat_end_date ?? null : null,
+    repeat_count: recurrence.repeat_enabled ? recurrence.repeat_count ?? null : null,
+  };
+  const { data, error } = await supabase
+    .from("preventive_manual_items")
+    .insert(parentRow)
+    .select()
+    .single();
+  if (error) throw error;
+  const parent = data as PreventiveItem;
+
+  if (recurrence.repeat_enabled && recurrence.repeat_every && recurrence.repeat_unit) {
+    // El padre queda como primera ocurrencia y se referencia a sí mismo
+    await supabase
+      .from("preventive_manual_items")
+      .update({ recurrence_parent_id: parent.id })
+      .eq("id", parent.id);
+    const rule: RecurrenceRule = {
+      every: recurrence.repeat_every,
+      unit: recurrence.repeat_unit,
+      endMode: recurrence.repeat_end_mode ?? "never",
+      endDate: recurrence.repeat_end_date ?? null,
+      count: recurrence.repeat_count ?? null,
+    };
+    const dates = generateOccurrences(input.scheduled_date, rule, horizonISO(24));
+    await insertOccurrencesIgnoringDuplicates({ ...parent, recurrence_parent_id: parent.id }, dates);
+  }
+  return parent;
+}
+
+/**
+ * Edita toda la serie: actualiza los campos en el padre y replica el patch a las
+ * ocurrencias futuras NO ejecutadas y SIN OIT. Si cambió la regla de recurrencia,
+ * borra (soft) ocurrencias futuras pendientes y regenera.
+ */
+export async function updateSeries(
+  parentId: string,
+  patch: Partial<PreventiveItemInput>,
+  recurrence?: RecurrenceInput,
+): Promise<void> {
+  const { data: parentData, error: pErr } = await supabase
+    .from("preventive_manual_items")
+    .select("*")
+    .eq("id", parentId)
+    .maybeSingle();
+  if (pErr) throw pErr;
+  if (!parentData) throw new Error("Preventivo padre no encontrado");
+  const parent = parentData as PreventiveItem;
+
+  const parentPatch: any = { ...patch };
+  if (patch.scheduled_date) {
+    parentPatch.scheduled_year = Number(patch.scheduled_date.slice(0, 4));
+    parentPatch.scheduled_month = Number(patch.scheduled_date.slice(5, 7));
+    parentPatch.scheduled_day = Number(patch.scheduled_date.slice(8, 10));
+  }
+
+  let ruleChanged = false;
+  if (recurrence) {
+    parentPatch.repeat_enabled = !!recurrence.repeat_enabled;
+    parentPatch.is_recurrence_parent = !!recurrence.repeat_enabled;
+    parentPatch.repeat_every = recurrence.repeat_enabled ? recurrence.repeat_every ?? null : null;
+    parentPatch.repeat_unit = recurrence.repeat_enabled ? recurrence.repeat_unit ?? null : null;
+    parentPatch.repeat_end_mode = recurrence.repeat_enabled ? recurrence.repeat_end_mode ?? "never" : null;
+    parentPatch.repeat_end_date = recurrence.repeat_enabled ? recurrence.repeat_end_date ?? null : null;
+    parentPatch.repeat_count = recurrence.repeat_enabled ? recurrence.repeat_count ?? null : null;
+    ruleChanged =
+      parent.repeat_enabled !== parentPatch.repeat_enabled ||
+      parent.repeat_every !== parentPatch.repeat_every ||
+      parent.repeat_unit !== parentPatch.repeat_unit ||
+      parent.repeat_end_mode !== parentPatch.repeat_end_mode ||
+      parent.repeat_end_date !== parentPatch.repeat_end_date ||
+      parent.repeat_count !== parentPatch.repeat_count ||
+      (!!patch.scheduled_date && patch.scheduled_date !== parent.scheduled_date);
+  }
+
+  const { error: uErr } = await supabase
+    .from("preventive_manual_items")
+    .update(parentPatch)
+    .eq("id", parentId);
+  if (uErr) throw uErr;
+
+  // Replicar a ocurrencias futuras pendientes (no ejecutadas y sin OIT)
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const childPatch: any = {};
+  const replicateKeys: (keyof PreventiveItemInput)[] = [
+    "equipment_id",
+    "equipment_code_snapshot",
+    "equipment_name_snapshot",
+    "task_name",
+    "preventive_type",
+    "frequency_label",
+    "responsible_id",
+    "estimated_hours",
+    "notes",
+  ];
+  for (const k of replicateKeys) {
+    if (patch[k] !== undefined) (childPatch as any)[k] = (patch as any)[k];
+  }
+  if (Object.keys(childPatch).length > 0) {
+    await supabase
+      .from("preventive_manual_items")
+      .update(childPatch)
+      .eq("recurrence_parent_id", parentId)
+      .neq("id", parentId)
+      .eq("active", true)
+      .is("work_order_id", null)
+      .not("status", "in", "(Realizado,Cancelado)")
+      .gte("scheduled_date", todayISO);
+  }
+
+  if (ruleChanged) {
+    // Soft-delete de ocurrencias futuras pendientes y regeneración
+    await supabase
+      .from("preventive_manual_items")
+      .update({ active: false })
+      .eq("recurrence_parent_id", parentId)
+      .neq("id", parentId)
+      .is("work_order_id", null)
+      .not("status", "in", "(Realizado,Cancelado)")
+      .gte("scheduled_date", todayISO);
+
+    const newParent: PreventiveItem = { ...parent, ...parentPatch, id: parentId } as PreventiveItem;
+    if (newParent.repeat_enabled && newParent.repeat_every && newParent.repeat_unit) {
+      const rule: RecurrenceRule = {
+        every: newParent.repeat_every,
+        unit: newParent.repeat_unit,
+        endMode: newParent.repeat_end_mode ?? "never",
+        endDate: newParent.repeat_end_date,
+        count: newParent.repeat_count,
+      };
+      const dates = generateOccurrences(newParent.scheduled_date, rule, horizonISO(24));
+      await insertOccurrencesIgnoringDuplicates(newParent, dates);
+    }
+  }
+}
+
+/** Cancela todas las ocurrencias futuras pendientes de una serie. */
+export async function cancelSeriesFuture(parentId: string): Promise<void> {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  await supabase
+    .from("preventive_manual_items")
+    .update({ status: "Cancelado" })
+    .eq("recurrence_parent_id", parentId)
+    .is("work_order_id", null)
+    .not("status", "in", "(Realizado,Cancelado)")
+    .gte("scheduled_date", todayISO);
+}
+
+/**
+ * Asegura que cada serie activa tenga ocurrencias hasta hoy+24 meses.
+ * Sirve como "top-up" al abrir la página de preventivos.
+ */
+export async function topUpSeriesHorizon(): Promise<{ generated: number }> {
+  const { data, error } = await supabase
+    .from("preventive_manual_items")
+    .select("*")
+    .eq("is_recurrence_parent", true)
+    .eq("repeat_enabled", true)
+    .eq("active", true);
+  if (error) throw error;
+  const parents = (data ?? []) as PreventiveItem[];
+  if (parents.length === 0) return { generated: 0 };
+  const horizon = horizonISO(24);
+  let total = 0;
+  for (const parent of parents) {
+    if (!parent.repeat_every || !parent.repeat_unit) continue;
+    const rule: RecurrenceRule = {
+      every: parent.repeat_every,
+      unit: parent.repeat_unit,
+      endMode: parent.repeat_end_mode ?? "never",
+      endDate: parent.repeat_end_date,
+      count: parent.repeat_count,
+    };
+    const dates = generateOccurrences(parent.scheduled_date, rule, horizon);
+    if (dates.length === 0) continue;
+    total += await insertOccurrencesIgnoringDuplicates(parent, dates);
+  }
+  return { generated: total };
+}
