@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import { PreventiveItem, PreventiveItemInput, PreventiveStatus } from "./types";
+import { PreventiveItem, PreventiveItemInput, PreventiveStatus, RecurrenceInput } from "./types";
+import { generateOccurrences, horizonISO, RecurrenceRule } from "./recurrence";
 
 export interface PreventiveFilters {
   year?: number | null;
