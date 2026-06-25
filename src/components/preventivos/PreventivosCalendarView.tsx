@@ -57,7 +57,8 @@ export function PreventivosCalendarView({ items, year, month, setYear, setMonth,
                 {events.slice(0, 4).map((it) => {
                   const st = effectiveStatus(it, todayISO);
                   return (
-                    <button key={it.id} onClick={() => onItemClick(it)} className={cn("text-[10px] px-1 py-0.5 rounded border truncate text-left", STATUS_COLORS[st])} title={`${it.equipment_code_snapshot} - ${it.task_name}`}>
+                    <button key={it.id} onClick={() => onItemClick(it)} className={cn("text-[10px] px-1 py-0.5 rounded border truncate text-left", STATUS_COLORS[st])} title={`${it.equipment_code_snapshot} - ${it.task_name}${it.recurrence_parent_id ? " (recurrente)" : ""}`}>
+                      {it.recurrence_parent_id && <span className="mr-0.5">↻</span>}
                       <span className="font-mono">{it.equipment_code_snapshot}</span> {it.task_name}
                     </button>
                   );
