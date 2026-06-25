@@ -261,8 +261,16 @@ export type Database = {
           estimated_hours: number | null
           frequency_label: string | null
           id: string
+          is_recurrence_parent: boolean
           notes: string | null
           preventive_type: string
+          recurrence_parent_id: string | null
+          repeat_count: number | null
+          repeat_enabled: boolean
+          repeat_end_date: string | null
+          repeat_end_mode: string | null
+          repeat_every: number | null
+          repeat_unit: string | null
           responsible_id: string | null
           scheduled_date: string
           scheduled_day: number
@@ -285,8 +293,16 @@ export type Database = {
           estimated_hours?: number | null
           frequency_label?: string | null
           id?: string
+          is_recurrence_parent?: boolean
           notes?: string | null
           preventive_type?: string
+          recurrence_parent_id?: string | null
+          repeat_count?: number | null
+          repeat_enabled?: boolean
+          repeat_end_date?: string | null
+          repeat_end_mode?: string | null
+          repeat_every?: number | null
+          repeat_unit?: string | null
           responsible_id?: string | null
           scheduled_date: string
           scheduled_day: number
@@ -309,8 +325,16 @@ export type Database = {
           estimated_hours?: number | null
           frequency_label?: string | null
           id?: string
+          is_recurrence_parent?: boolean
           notes?: string | null
           preventive_type?: string
+          recurrence_parent_id?: string | null
+          repeat_count?: number | null
+          repeat_enabled?: boolean
+          repeat_end_date?: string | null
+          repeat_end_mode?: string | null
+          repeat_every?: number | null
+          repeat_unit?: string | null
           responsible_id?: string | null
           scheduled_date?: string
           scheduled_day?: number
@@ -329,6 +353,13 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "preventive_manual_items_recurrence_parent_id_fkey"
+            columns: ["recurrence_parent_id"]
+            isOneToOne: false
+            referencedRelation: "preventive_manual_items"
             referencedColumns: ["id"]
           },
           {

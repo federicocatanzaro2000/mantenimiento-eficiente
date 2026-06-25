@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { canManagePreventivos } from "@/lib/permissions";
 import { Equipment, listEquipment } from "@/lib/catalogos/api";
 import { PreventiveItem, PREVENTIVE_TYPES, PREVENTIVE_STATUSES, effectiveStatus, MONTH_NAMES } from "@/lib/preventiveManual/types";
-import { listPreventives, distinctYears, softDeletePreventive, markRealizado, cancelar, createOITFromPreventivo } from "@/lib/preventiveManual/api";
+import { listPreventives, distinctYears, softDeletePreventive, markRealizado, cancelar, createOITFromPreventivo, topUpSeriesHorizon, cancelSeriesFuture } from "@/lib/preventiveManual/api";
 import { exportYearToExcel } from "@/lib/preventiveManual/excelExport";
 import { PreventivoFormDialog } from "@/components/preventivos/PreventivoFormDialog";
 import { ImportExcelDialog } from "@/components/preventivos/ImportExcelDialog";
@@ -70,6 +70,11 @@ export default function PreventivosPage() {
 
   useEffect(() => { refresh(); /* eslint-disable-next-line */ }, [year]);
   useEffect(() => { listEquipment(false).then(setEquipment).catch(() => {}); }, []);
+  // Top-up: asegura ≥12 meses futuros de cada serie recurrente al abrir la página
+  useEffect(() => {
+    topUpSeriesHorizon().then((r) => { if (r.generated > 0) refresh(); }).catch(() => {});
+    // eslint-disable-next-line
+  }, []);
 
   const yearOptions = useMemo(() => {
     const s = new Set<number>(yearsWithData);
@@ -289,7 +294,15 @@ export default function PreventivosPage() {
               onViewOIT={(id) => navigate(`/orden/${id}`)}
               onMarkDone={async (it) => { await markRealizado(it.id); toast({ title: "Marcado realizado" }); refresh(); }}
               onCancel={async (it) => { await cancelar(it.id); toast({ title: "Preventivo cancelado" }); refresh(); }}
-              onSoftDelete={async (it) => { if (confirm("¿Desactivar este preventivo?")) { await softDeletePreventive(it.id); toast({ title: "Desactivado" }); refresh(); } }}
+              onSoftDelete={async (it) => {
+                if (!confirm("¿Desactivar este preventivo?")) return;
+                if (it.is_recurrence_parent && confirm("¿Cancelar también todas las ocurrencias futuras pendientes de la serie?")) {
+                  await cancelSeriesFuture(it.id);
+                }
+                await softDeletePreventive(it.id);
+                toast({ title: "Desactivado" });
+                refresh();
+              }}
             />
           </TabsContent>
         </Tabs>

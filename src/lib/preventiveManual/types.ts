@@ -6,6 +6,9 @@ export const PREVENTIVE_STATUSES: PreventiveStatus[] = ["Programado", "Con OIT",
 
 export type PreventiveSource = "manual" | "excel_import" | "duplicated_year";
 
+export type RepeatUnit = "day" | "week" | "month" | "year";
+export type RepeatEndMode = "never" | "until" | "count";
+
 export interface PreventiveItem {
   id: string;
   scheduled_date: string;
@@ -27,6 +30,14 @@ export interface PreventiveItem {
   active: boolean;
   created_at: string;
   updated_at: string;
+  recurrence_parent_id: string | null;
+  is_recurrence_parent: boolean;
+  repeat_enabled: boolean;
+  repeat_every: number | null;
+  repeat_unit: RepeatUnit | null;
+  repeat_end_mode: RepeatEndMode | null;
+  repeat_end_date: string | null;
+  repeat_count: number | null;
 }
 
 export interface PreventiveItemInput {
@@ -42,6 +53,15 @@ export interface PreventiveItemInput {
   estimated_hours?: number | null;
   notes?: string | null;
   source?: PreventiveSource;
+}
+
+export interface RecurrenceInput {
+  repeat_enabled: boolean;
+  repeat_every?: number | null;
+  repeat_unit?: RepeatUnit | null;
+  repeat_end_mode?: RepeatEndMode | null;
+  repeat_end_date?: string | null;
+  repeat_count?: number | null;
 }
 
 export const STATUS_COLORS: Record<string, string> = {
