@@ -46,6 +46,7 @@ export default function Listado() {
         o.tipoOrden,
         o.estado,
         o.tecnicoResponsable,
+        (o.tecnicosResponsables ?? []).join(" "),
         o.prioridad,
         o.horasPresupuestadas,
         o.horasReales,

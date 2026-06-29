@@ -156,7 +156,16 @@ export default function FiltrosPage() {
     };
     return {
       solicitante: collect("solicitante"),
-      tecnico: collect("tecnicoResponsable"),
+      tecnico: (() => {
+        const s = new Set<string>();
+        ordenes.forEach((o) => {
+          const arr = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+            ? o.tecnicosResponsables
+            : (o.tecnicoResponsable ? o.tecnicoResponsable.split(",").map((x) => x.trim()) : []);
+          arr.forEach((t) => { if (t) s.add(t); });
+        });
+        return s;
+      })(),
       calidad: collect("responsableControlCalidad"),
       elaboro: collect("elaboro"),
       reviso: collect("reviso"),
