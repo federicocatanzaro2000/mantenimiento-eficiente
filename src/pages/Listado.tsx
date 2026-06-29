@@ -154,7 +154,14 @@ export default function Listado() {
                   <td>{o.sector}</td>
                   <td>{o.tipoOrden}</td>
                   <td><EstadoBadge estado={o.estado} /></td>
-                  <td>{o.tecnicoResponsable}</td>
+                  <td>
+                    {((o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+                      ? o.tecnicosResponsables
+                      : (o.tecnicoResponsable ? [o.tecnicoResponsable] : [])
+                    ).map((t, i) => (
+                      <span key={i} className="inline-block mr-1 mb-0.5 px-1.5 py-0.5 text-[11px] bg-secondary rounded">{t}</span>
+                    ))}
+                  </td>
                   <td><PrioridadBadge prioridad={o.prioridad} /></td>
                   <td className="text-right tabular-nums">{o.horasPresupuestadas}</td>
                   <td className="text-right tabular-nums">{o.horasReales}</td>
