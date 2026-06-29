@@ -162,7 +162,12 @@ export default function DashboardPage() {
       if (g.tipo && o.tipoOrden !== g.tipo) return false;
       if (g.estado && o.estado !== g.estado) return false;
       if (g.prioridad && o.prioridad !== g.prioridad) return false;
-      if (g.tecnico && !t(o.tecnicoResponsable, g.tecnico)) return false;
+      if (g.tecnico) {
+        const arr = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+          ? o.tecnicosResponsables
+          : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
+        if (!arr.some((x) => t(x, g.tecnico))) return false;
+      }
       if (g.solicitante && !t(o.solicitante, g.solicitante)) return false;
       if (g.codigoEquipo && !t(o.codigoEquipo, g.codigoEquipo)) return false;
       if (g.nombreEquipo && !t(o.nombreEquipo, g.nombreEquipo)) return false;
@@ -273,18 +278,23 @@ export default function DashboardPage() {
   const cargaTecnico = useMemo(() => {
     const m = new Map<string, { tecnico: string; total: number; abiertas: number; vencidas: number; cumplidas: number; enTermino: number; hPres: number; hReal: number }>();
     filtered.forEach((o) => {
-      const k = o.tecnicoResponsable || "Sin asignar";
-      const cur = m.get(k) || { tecnico: k, total: 0, abiertas: 0, vencidas: 0, cumplidas: 0, enTermino: 0, hPres: 0, hReal: 0 };
-      cur.total += 1;
-      if (isOpen(o)) cur.abiertas += 1;
-      if (isOverdue(o)) cur.vencidas += 1;
-      if (isClosed(o)) {
-        cur.cumplidas += 1;
-        if (o.fechaFinalizacion && o.fechaLimiteRealizacion && o.fechaFinalizacion <= o.fechaLimiteRealizacion) cur.enTermino += 1;
-      }
-      cur.hPres += Number(o.horasPresupuestadas) || 0;
-      cur.hReal += Number(o.horasReales) || 0;
-      m.set(k, cur);
+      const techs = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+        ? o.tecnicosResponsables
+        : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
+      const keys = techs.length > 0 ? techs : ["Sin asignar"];
+      keys.forEach((k) => {
+        const cur = m.get(k) || { tecnico: k, total: 0, abiertas: 0, vencidas: 0, cumplidas: 0, enTermino: 0, hPres: 0, hReal: 0 };
+        cur.total += 1;
+        if (isOpen(o)) cur.abiertas += 1;
+        if (isOverdue(o)) cur.vencidas += 1;
+        if (isClosed(o)) {
+          cur.cumplidas += 1;
+          if (o.fechaFinalizacion && o.fechaLimiteRealizacion && o.fechaFinalizacion <= o.fechaLimiteRealizacion) cur.enTermino += 1;
+        }
+        cur.hPres += Number(o.horasPresupuestadas) || 0;
+        cur.hReal += Number(o.horasReales) || 0;
+        m.set(k, cur);
+      });
     });
     return Array.from(m.values()).sort((a, b) => b.abiertas - a.abiertas);
   }, [filtered]);
@@ -341,7 +351,12 @@ export default function DashboardPage() {
 
   // calidad de datos
   const datos = useMemo(() => ({
-    sinTecnico: filtered.filter((o) => !o.tecnicoResponsable?.trim()).length,
+    sinTecnico: filtered.filter((o) => {
+      const arr = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+        ? o.tecnicosResponsables
+        : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
+      return arr.length === 0;
+    }).length,
     sinEquipo: filtered.filter((o) => !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()).length,
     sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
     sinPres: filtered.filter((o) => !o.horasPresupuestadas).length,

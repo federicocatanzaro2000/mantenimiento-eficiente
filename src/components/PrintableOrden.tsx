@@ -62,7 +62,11 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
             <F label="Tipo de orden" value={dash(orden.tipoOrden)} />
             <F label="Aprobado" value={yn(orden.aprobado)} />
             <F label="Solicitante" value={dash(orden.solicitante)} />
-            <F label="Técnico responsable" value={dash(orden.tecnicoResponsable)} />
+            <F label={orden.tecnicosResponsables && orden.tecnicosResponsables.length > 1 ? "Técnicos responsables" : "Técnico responsable"} value={dash(
+              (orden.tecnicosResponsables && orden.tecnicosResponsables.length > 0)
+                ? orden.tecnicosResponsables.join(", ")
+                : orden.tecnicoResponsable
+            )} />
             <F label="Sector" value={dash(orden.sector)} />
             <F label="Estado" value={dash(orden.estado)} />
           </div>
