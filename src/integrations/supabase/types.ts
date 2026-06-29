@@ -77,6 +77,7 @@ export type Database = {
           sector_limpio_ordenado: boolean
           solicitante: string | null
           tecnico_responsable: string | null
+          tecnicos_responsables: string[]
           tipo_orden: string | null
           trabajo_solicitado: string | null
           updated_at: string
@@ -117,6 +118,7 @@ export type Database = {
           sector_limpio_ordenado?: boolean
           solicitante?: string | null
           tecnico_responsable?: string | null
+          tecnicos_responsables?: string[]
           tipo_orden?: string | null
           trabajo_solicitado?: string | null
           updated_at?: string
@@ -157,6 +159,7 @@ export type Database = {
           sector_limpio_ordenado?: boolean
           solicitante?: string | null
           tecnico_responsable?: string | null
+          tecnicos_responsables?: string[]
           tipo_orden?: string | null
           trabajo_solicitado?: string | null
           updated_at?: string
