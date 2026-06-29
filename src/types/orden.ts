@@ -18,7 +18,7 @@ export interface Orden {
   fechaFinalizacion: string;
   fechaLimiteRealizacion: string;
   tecnicoResponsable: string;
-  tecnicosResponsables: string[];
+  tecnicosResponsables?: string[];
   sector: string;
   tipoOrden: TipoOrden | "";
   aprobado: boolean;
