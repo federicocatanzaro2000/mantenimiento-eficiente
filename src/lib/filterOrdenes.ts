@@ -22,7 +22,13 @@ export function aplicarFiltros(ordenes: Orden[], f: Filtros): Orden[] {
     if (!inRange(o.fechaInicio, f.fechaInicioDesde, f.fechaInicioHasta)) return false;
     if (!inRange(o.fechaFinalizacion, f.fechaFinDesde, f.fechaFinHasta)) return false;
     if (!inRange(o.fechaLimiteRealizacion, f.fechaLimiteDesde, f.fechaLimiteHasta)) return false;
-    if (!txt(o.tecnicoResponsable, f.tecnicoResponsable)) return false;
+    if (f.tecnicoResponsable) {
+      const q = f.tecnicoResponsable.toLowerCase().trim();
+      const arr = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+        ? o.tecnicosResponsables
+        : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
+      if (!arr.some((t) => (t ?? "").toLowerCase().includes(q))) return false;
+    }
     if (!txt(o.sector, f.sector)) return false;
     if (f.tipoOrden.length && !f.tipoOrden.includes(o.tipoOrden as any)) return false;
     if (f.aprobado === "Aprobadas" && !o.aprobado) return false;

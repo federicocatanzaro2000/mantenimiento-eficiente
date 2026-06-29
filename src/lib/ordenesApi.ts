@@ -11,6 +11,9 @@ export function rowToOrden(r: any): Orden {
     fechaFinalizacion: r.fecha_finalizacion ?? "",
     fechaLimiteRealizacion: r.fecha_limite_realizacion ?? "",
     tecnicoResponsable: r.tecnico_responsable ?? "",
+    tecnicosResponsables: Array.isArray(r.tecnicos_responsables)
+      ? (r.tecnicos_responsables as string[]).filter((x) => x && String(x).trim() !== "")
+      : (r.tecnico_responsable ? [r.tecnico_responsable] : []),
     sector: r.sector ?? "",
     tipoOrden: (r.tipo_orden ?? "") as Orden["tipoOrden"],
     aprobado: !!r.aprobado,
@@ -51,7 +54,12 @@ function ordenToRow(o: Orden) {
     fecha_inicio: o.fechaInicio || null,
     fecha_finalizacion: o.fechaFinalizacion || null,
     fecha_limite_realizacion: o.fechaLimiteRealizacion || null,
-    tecnico_responsable: o.tecnicoResponsable,
+    tecnico_responsable: (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+      ? o.tecnicosResponsables.join(", ")
+      : o.tecnicoResponsable,
+    tecnicos_responsables: (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
+      ? o.tecnicosResponsables
+      : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []),
     sector: o.sector,
     tipo_orden: o.tipoOrden || null,
     aprobado: o.aprobado,

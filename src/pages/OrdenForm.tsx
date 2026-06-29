@@ -20,6 +20,7 @@ import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/pe
 import { Combobox, ComboboxOption } from "@/components/Combobox";
 import { listSectors, listPeople, listEquipment, listOrderTypes, Sector, Person, Equipment, OrderType } from "@/lib/catalogos/api";
 import { PrintableOrden } from "@/components/PrintableOrden";
+import { MultiPersonSelect } from "@/components/MultiPersonSelect";
 import { OrdenAttachments } from "@/components/OrdenAttachments";
 import { Attachment } from "@/lib/attachments/api";
 import { useOrdenesStore as useStoreForCounts } from "@/store/ordenesStore";
@@ -48,7 +49,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const empty = (nro: number): Orden => ({
   id: uid(), nroOrden: nro, fechaCreacion: new Date().toISOString().slice(0, 10),
   fechaInicio: "", fechaFinalizacion: "", fechaLimiteRealizacion: "",
-  tecnicoResponsable: "", sector: "", tipoOrden: "", aprobado: false,
+  tecnicoResponsable: "", tecnicosResponsables: [], sector: "", tipoOrden: "", aprobado: false,
   estado: "Pendiente", prioridad: "Media", horasPresupuestadas: "", horasReales: "",
   descripcionProblema: "", codigoDocumento: "", codigoEquipo: "", nombreEquipo: "",
   solicitante: "", trabajoSolicitado: "", estadoRecepcionEquipo: "",
@@ -245,11 +246,21 @@ export default function OrdenForm() {
               value={orden.solicitante} onChange={(v) => set("solicitante", v)} disabled={!can1}
               allowFreeSnapshot placeholder="Seleccionar persona..." />
           </Field>
-          <Field label="Técnico responsable">
-            <Combobox
-              options={people.filter((p) => p.active && p.can_be_technician).map<ComboboxOption>((p) => ({ value: p.full_name, label: p.full_name }))}
-              value={orden.tecnicoResponsable} onChange={(v) => set("tecnicoResponsable", v)} disabled={!can1}
-              allowFreeSnapshot placeholder="Seleccionar persona..." />
+          <Field label="Técnicos responsables">
+            <MultiPersonSelect
+              options={people.filter((p) => p.active && p.can_be_technician).map((p) => ({ value: p.full_name, label: p.full_name }))}
+              values={
+                (orden.tecnicosResponsables && orden.tecnicosResponsables.length > 0)
+                  ? orden.tecnicosResponsables
+                  : (orden.tecnicoResponsable ? orden.tecnicoResponsable.split(",").map((x) => x.trim()).filter(Boolean) : [])
+              }
+              onChange={(v) => {
+                setOrden((o) => o ? ({ ...o, tecnicosResponsables: v, tecnicoResponsable: v.join(", ") }) : o);
+              }}
+              disabled={!can1}
+              allowFreeText
+              placeholder="Agregar técnico..."
+            />
           </Field>
           <Field label="Sector" required>
             <Combobox
