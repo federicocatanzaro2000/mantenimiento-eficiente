@@ -43,7 +43,7 @@ const MAP: Record<keyof Filtros, string> = {
 const ARRAY_KEYS: (keyof Filtros)[] = ["tipoOrden", "estado", "prioridad"];
 const TRISTATE_DEFAULT_TODOS: (keyof Filtros)[] = [
   "aprobado", "estadoRecepcionEquipo", "sectorLimpio",
-  "herramientasLimpias", "controlCalidad", "lineStopped", "attachments",
+  "herramientasLimpias", "controlCalidad", "lineStopped", "attachments", "projectEquipo",
 ];
 
 function isDefault(key: keyof Filtros, value: any): boolean {
