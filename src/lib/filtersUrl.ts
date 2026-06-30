@@ -37,6 +37,7 @@ const MAP: Record<keyof Filtros, string> = {
   lineStoppedHorasMin: "line_stopped_hours_min",
   lineStoppedHorasMax: "line_stopped_hours_max",
   attachments: "attachments",
+  projectEquipo: "project_equipment",
 };
 
 const ARRAY_KEYS: (keyof Filtros)[] = ["tipoOrden", "estado", "prioridad"];
