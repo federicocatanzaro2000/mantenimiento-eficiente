@@ -873,7 +873,7 @@ export default function DashboardPage() {
           return (
             <Section title="Proyectos" subtitle="Distribución de OITs tipo Proyecto según asociación a equipos">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <Kpi title="Total proyectos" value={proyectos.length} onClick={() => goResultados({ projectEquipo: "Todos" } as any)} />
+                <Kpi title="Total proyectos" value={proyectos.length} />
                 <Kpi title="Con equipo asociado" value={conEq.length} onClick={() => goResultados({ projectEquipo: "ConEquipo" } as any)} />
                 <Kpi title="Sin equipo asociado" value={sinEq.length} onClick={() => goResultados({ projectEquipo: "SinEquipo" } as any)} />
               </div>
