@@ -89,6 +89,7 @@ export interface Filtros {
   lineStoppedHorasMin: string;
   lineStoppedHorasMax: string;
   attachments: "Todos" | "Con" | "Sin";
+  projectEquipo: "Todos" | "ConEquipo" | "SinEquipo";
 }
 
 export const filtrosVacios: Filtros = {
