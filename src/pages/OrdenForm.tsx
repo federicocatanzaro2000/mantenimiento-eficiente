@@ -57,9 +57,13 @@ const empty = (nro: number): Orden => ({
   materialesUtilizados: [], controlLiberacionCalidad: false,
   responsableControlCalidad: "", comentarioCalidad: "", elaboro: "", reviso: "", aprobo: "",
   lineStopped: null, lineStoppedHours: "",
+  projectHasEquipment: null,
   createdAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString().slice(0, 10),
 });
+
+const isProyectoTipo = (t: string | undefined | null) =>
+  String(t ?? "").trim().toLowerCase().startsWith("proyecto");
 
 function Section({
   title, seccion, canEdit, children,
