@@ -864,6 +864,22 @@ export default function DashboardPage() {
             <Kpi title="Sin sector" value={datos.sinSector} tone={datos.sinSector > 0 ? "warning" : "default"} />
           </div>
         </Section>
+
+        {/* Proyectos */}
+        {(() => {
+          const proyectos = filtered.filter((o) => String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto"));
+          const conEq = proyectos.filter((o) => o.projectHasEquipment === true || (o.projectHasEquipment == null && (o.codigoEquipo?.trim() || o.nombreEquipo?.trim())));
+          const sinEq = proyectos.filter((o) => o.projectHasEquipment === false || (o.projectHasEquipment == null && !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()));
+          return (
+            <Section title="Proyectos" subtitle="Distribución de OITs tipo Proyecto según asociación a equipos">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <Kpi title="Total proyectos" value={proyectos.length} onClick={() => goResultados({ projectEquipo: "Todos" } as any)} />
+                <Kpi title="Con equipo asociado" value={conEq.length} onClick={() => goResultados({ projectEquipo: "ConEquipo" } as any)} />
+                <Kpi title="Sin equipo asociado" value={sinEq.length} onClick={() => goResultados({ projectEquipo: "SinEquipo" } as any)} />
+              </div>
+            </Section>
+          );
+        })()}
       </div>
     </AppLayout>
   );
