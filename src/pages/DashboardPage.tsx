@@ -357,7 +357,11 @@ export default function DashboardPage() {
         : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
       return arr.length === 0;
     }).length,
-    sinEquipo: filtered.filter((o) => !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()).length,
+    sinEquipo: filtered.filter((o) => {
+      const isProyectoSinEq = String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false;
+      if (isProyectoSinEq) return false;
+      return !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim();
+    }).length,
     sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
     sinPres: filtered.filter((o) => !o.horasPresupuestadas).length,
     sinTipo: filtered.filter((o) => !o.tipoOrden).length,
