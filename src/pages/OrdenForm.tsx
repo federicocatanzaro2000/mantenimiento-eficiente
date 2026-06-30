@@ -174,16 +174,32 @@ export default function OrdenForm() {
         if (Number(orden.lineStoppedHours) <= 0) return "Las horas de línea parada deben ser mayores a 0.";
       }
     }
+    if (isProyectoTipo(orden.tipoOrden)) {
+      if (orden.projectHasEquipment === null || orden.projectHasEquipment === undefined) {
+        return "Indicá si el proyecto está asociado a un equipo.";
+      }
+      if (orden.projectHasEquipment === true && !orden.codigoEquipo?.trim() && !orden.nombreEquipo?.trim()) {
+        return "Seleccioná el equipo asociado al proyecto.";
+      }
+    }
     return null;
   };
 
   const setTipoOrden = (v: string) => {
     const next = orderTypes.find((t) => t.name.trim().toLowerCase() === v.trim().toLowerCase());
     const needs = next?.requires_line_stoppage_question ?? (v === "Correctivo");
+    const willBeProyecto = isProyectoTipo(v);
     setOrden((o) => {
       if (!o) return o;
-      if (!needs) return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
-      return { ...o, tipoOrden: v };
+      let n: Orden = { ...o, tipoOrden: v };
+      if (!needs) { n.lineStopped = null; n.lineStoppedHours = ""; }
+      if (!willBeProyecto) {
+        n.projectHasEquipment = null;
+      } else if (o.projectHasEquipment === null || o.projectHasEquipment === undefined) {
+        // Si ya tiene equipo cargado, asumir "Sí"; si no, dejar sin responder.
+        if (o.codigoEquipo?.trim() || o.nombreEquipo?.trim()) n.projectHasEquipment = true;
+      }
+      return n;
     });
   };
 
