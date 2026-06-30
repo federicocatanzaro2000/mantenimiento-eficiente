@@ -151,7 +151,11 @@ export default function Listado() {
                   <td className="font-mono font-semibold">{o.nroOrden}</td>
                   <td>{o.fechaCreacion}</td>
                   <td><AprobadoBadge aprobado={o.aprobado} /></td>
-                  <td>{o.codigoEquipo}</td>
+                  <td>{o.codigoEquipo
+                    ? o.codigoEquipo
+                    : (String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false
+                      ? <span className="text-xs text-muted-foreground italic">Sin equipo asociado</span>
+                      : "")}</td>
                   <td>{o.sector}</td>
                   <td>{o.tipoOrden}</td>
                   <td><EstadoBadge estado={o.estado} /></td>

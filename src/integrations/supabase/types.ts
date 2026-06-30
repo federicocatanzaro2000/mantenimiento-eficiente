@@ -71,6 +71,7 @@ export type Database = {
           observaciones: string | null
           preventivo_schedule_id: string | null
           prioridad: string | null
+          project_has_equipment: boolean | null
           responsable_control_calidad: string | null
           reviso: string | null
           sector: string | null
@@ -112,6 +113,7 @@ export type Database = {
           observaciones?: string | null
           preventivo_schedule_id?: string | null
           prioridad?: string | null
+          project_has_equipment?: boolean | null
           responsable_control_calidad?: string | null
           reviso?: string | null
           sector?: string | null
@@ -153,6 +155,7 @@ export type Database = {
           observaciones?: string | null
           preventivo_schedule_id?: string | null
           prioridad?: string | null
+          project_has_equipment?: boolean | null
           responsable_control_calidad?: string | null
           reviso?: string | null
           sector?: string | null

@@ -57,9 +57,13 @@ const empty = (nro: number): Orden => ({
   materialesUtilizados: [], controlLiberacionCalidad: false,
   responsableControlCalidad: "", comentarioCalidad: "", elaboro: "", reviso: "", aprobo: "",
   lineStopped: null, lineStoppedHours: "",
+  projectHasEquipment: null,
   createdAt: new Date().toISOString().slice(0, 10),
   updatedAt: new Date().toISOString().slice(0, 10),
 });
+
+const isProyectoTipo = (t: string | undefined | null) =>
+  String(t ?? "").trim().toLowerCase().startsWith("proyecto");
 
 function Section({
   title, seccion, canEdit, children,
@@ -170,16 +174,32 @@ export default function OrdenForm() {
         if (Number(orden.lineStoppedHours) <= 0) return "Las horas de línea parada deben ser mayores a 0.";
       }
     }
+    if (isProyectoTipo(orden.tipoOrden)) {
+      if (orden.projectHasEquipment === null || orden.projectHasEquipment === undefined) {
+        return "Indicá si el proyecto está asociado a un equipo.";
+      }
+      if (orden.projectHasEquipment === true && !orden.codigoEquipo?.trim() && !orden.nombreEquipo?.trim()) {
+        return "Seleccioná el equipo asociado al proyecto.";
+      }
+    }
     return null;
   };
 
   const setTipoOrden = (v: string) => {
     const next = orderTypes.find((t) => t.name.trim().toLowerCase() === v.trim().toLowerCase());
     const needs = next?.requires_line_stoppage_question ?? (v === "Correctivo");
+    const willBeProyecto = isProyectoTipo(v);
     setOrden((o) => {
       if (!o) return o;
-      if (!needs) return { ...o, tipoOrden: v, lineStopped: null, lineStoppedHours: "" };
-      return { ...o, tipoOrden: v };
+      let n: Orden = { ...o, tipoOrden: v };
+      if (!needs) { n.lineStopped = null; n.lineStoppedHours = ""; }
+      if (!willBeProyecto) {
+        n.projectHasEquipment = null;
+      } else if (o.projectHasEquipment === null || o.projectHasEquipment === undefined) {
+        // Si ya tiene equipo cargado, asumir "Sí"; si no, dejar sin responder.
+        if (o.codigoEquipo?.trim() || o.nombreEquipo?.trim()) n.projectHasEquipment = true;
+      }
+      return n;
     });
   };
 
@@ -372,35 +392,70 @@ export default function OrdenForm() {
 
         <Section title="3. Equipo y documentación" seccion={3} canEdit={can3}>
           <Field label="Código de documento"><Input value={orden.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></Field>
-          <Field label="Código de equipo">
-            <Combobox
-              options={equipos.filter((e) => e.active).map<ComboboxOption>((e) => ({ value: e.code, label: `${e.code} — ${e.name}`, keywords: e.name }))}
-              value={orden.codigoEquipo}
-              onChange={(v) => {
-                const eq = equipos.find((x) => x.code === v);
-                setOrden((o) => o ? ({ ...o, codigoEquipo: v, nombreEquipo: eq ? eq.name : o.nombreEquipo }) : o);
-              }}
-              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar código..." />
-          </Field>
-          <Field label="Nombre de equipo">
-            <Combobox
-              options={Array.from(new Set(equipos.filter((e) => e.active).map((e) => e.name))).sort().map<ComboboxOption>((n) => ({ value: n, label: n }))}
-              value={orden.nombreEquipo}
-              onChange={(v) => {
-                const matches = equipos.filter((e) => e.active && e.name === v);
-                setOrden((o) => {
-                  if (!o) return o;
-                  if (matches.length === 1) return { ...o, nombreEquipo: v, codigoEquipo: matches[0].code };
-                  // Múltiples: si el código actual no pertenece a ese nombre, limpiar
-                  const keepCode = matches.some((m) => m.code === o.codigoEquipo);
-                  return { ...o, nombreEquipo: v, codigoEquipo: keepCode ? o.codigoEquipo : "" };
-                });
-              }}
-              disabled={!can3} allowFreeSnapshot placeholder="Seleccionar equipo..." />
-            {orden.nombreEquipo && equipos.filter((e) => e.active && e.name === orden.nombreEquipo).length > 1 && !orden.codigoEquipo && (
-              <p className="text-xs text-amber-600 mt-1">Hay varios códigos para este nombre. Elegí el código arriba.</p>
-            )}
-          </Field>
+
+          {isProyectoTipo(orden.tipoOrden) && (
+            <div className="md:col-span-2 lg:col-span-3">
+              <Field label="¿Este proyecto está asociado a un equipo?" required>
+                <div className="flex gap-4 h-10 items-center">
+                  {([["Sí", true], ["No", false]] as const).map(([lbl, val]) => (
+                    <label key={lbl} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="project_has_equipment"
+                        checked={orden.projectHasEquipment === val}
+                        onChange={() => setOrden((o) => o ? ({
+                          ...o,
+                          projectHasEquipment: val,
+                          codigoEquipo: val ? o.codigoEquipo : "",
+                          nombreEquipo: val ? o.nombreEquipo : "",
+                        }) : o)}
+                        disabled={!can3}
+                      />
+                      {lbl}
+                    </label>
+                  ))}
+                </div>
+                {orden.projectHasEquipment === false && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Este proyecto se registrará sin equipo asociado.
+                  </p>
+                )}
+              </Field>
+            </div>
+          )}
+
+          {(!isProyectoTipo(orden.tipoOrden) || orden.projectHasEquipment === true) && (
+            <>
+              <Field label="Código de equipo" required={isProyectoTipo(orden.tipoOrden)}>
+                <Combobox
+                  options={equipos.filter((e) => e.active).map<ComboboxOption>((e) => ({ value: e.code, label: `${e.code} — ${e.name}`, keywords: e.name }))}
+                  value={orden.codigoEquipo}
+                  onChange={(v) => {
+                    const eq = equipos.find((x) => x.code === v);
+                    setOrden((o) => o ? ({ ...o, codigoEquipo: v, nombreEquipo: eq ? eq.name : o.nombreEquipo }) : o);
+                  }}
+                  disabled={!can3} allowFreeSnapshot placeholder="Seleccionar código..." />
+              </Field>
+              <Field label="Nombre de equipo" required={isProyectoTipo(orden.tipoOrden)}>
+                <Combobox
+                  options={Array.from(new Set(equipos.filter((e) => e.active).map((e) => e.name))).sort().map<ComboboxOption>((n) => ({ value: n, label: n }))}
+                  value={orden.nombreEquipo}
+                  onChange={(v) => {
+                    const matches = equipos.filter((e) => e.active && e.name === v);
+                    setOrden((o) => {
+                      if (!o) return o;
+                      if (matches.length === 1) return { ...o, nombreEquipo: v, codigoEquipo: matches[0].code };
+                      const keepCode = matches.some((m) => m.code === o.codigoEquipo);
+                      return { ...o, nombreEquipo: v, codigoEquipo: keepCode ? o.codigoEquipo : "" };
+                    });
+                  }}
+                  disabled={!can3} allowFreeSnapshot placeholder="Seleccionar equipo..." />
+                {orden.nombreEquipo && equipos.filter((e) => e.active && e.name === orden.nombreEquipo).length > 1 && !orden.codigoEquipo && (
+                  <p className="text-xs text-amber-600 mt-1">Hay varios códigos para este nombre. Elegí el código arriba.</p>
+                )}
+              </Field>
+            </>
+          )}
         </Section>
 
         <Section title="4. Recepción, limpieza y herramientas" seccion={4} canEdit={can4}>

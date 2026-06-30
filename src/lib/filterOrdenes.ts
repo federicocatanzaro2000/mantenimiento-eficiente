@@ -59,6 +59,13 @@ export function aplicarFiltros(ordenes: Orden[], f: Filtros): Orden[] {
     const n = o.attachmentsCount ?? 0;
     if (f.attachments === "Con" && n <= 0) return false;
     if (f.attachments === "Sin" && n > 0) return false;
+    if (f.projectEquipo && f.projectEquipo !== "Todos") {
+      const isProyecto = String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto");
+      if (!isProyecto) return false;
+      const hasEq = o.projectHasEquipment ?? (!!(o.codigoEquipo?.trim() || o.nombreEquipo?.trim()));
+      if (f.projectEquipo === "ConEquipo" && !hasEq) return false;
+      if (f.projectEquipo === "SinEquipo" && hasEq) return false;
+    }
     return true;
   });
 }

@@ -357,7 +357,11 @@ export default function DashboardPage() {
         : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
       return arr.length === 0;
     }).length,
-    sinEquipo: filtered.filter((o) => !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()).length,
+    sinEquipo: filtered.filter((o) => {
+      const isProyectoSinEq = String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false;
+      if (isProyectoSinEq) return false;
+      return !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim();
+    }).length,
     sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
     sinPres: filtered.filter((o) => !o.horasPresupuestadas).length,
     sinTipo: filtered.filter((o) => !o.tipoOrden).length,
@@ -860,6 +864,22 @@ export default function DashboardPage() {
             <Kpi title="Sin sector" value={datos.sinSector} tone={datos.sinSector > 0 ? "warning" : "default"} />
           </div>
         </Section>
+
+        {/* Proyectos */}
+        {(() => {
+          const proyectos = filtered.filter((o) => String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto"));
+          const conEq = proyectos.filter((o) => o.projectHasEquipment === true || (o.projectHasEquipment == null && (o.codigoEquipo?.trim() || o.nombreEquipo?.trim())));
+          const sinEq = proyectos.filter((o) => o.projectHasEquipment === false || (o.projectHasEquipment == null && !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()));
+          return (
+            <Section title="Proyectos" subtitle="Distribución de OITs tipo Proyecto según asociación a equipos">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <Kpi title="Total proyectos" value={proyectos.length} />
+                <Kpi title="Con equipo asociado" value={conEq.length} onClick={() => goResultados({ projectEquipo: "ConEquipo" } as any)} />
+                <Kpi title="Sin equipo asociado" value={sinEq.length} onClick={() => goResultados({ projectEquipo: "SinEquipo" } as any)} />
+              </div>
+            </Section>
+          );
+        })()}
       </div>
     </AppLayout>
   );

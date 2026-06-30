@@ -45,6 +45,7 @@ export interface Orden {
   aprobo: string;
   lineStopped: boolean | null;
   lineStoppedHours: number | "";
+  projectHasEquipment?: boolean | null;
   attachmentsCount?: number;
   createdAt: string;
   updatedAt: string;
@@ -88,6 +89,7 @@ export interface Filtros {
   lineStoppedHorasMin: string;
   lineStoppedHorasMax: string;
   attachments: "Todos" | "Con" | "Sin";
+  projectEquipo: "Todos" | "ConEquipo" | "SinEquipo";
 }
 
 export const filtrosVacios: Filtros = {
@@ -110,4 +112,5 @@ export const filtrosVacios: Filtros = {
   responsableControlCalidad: "", elaboro: "", reviso: "", aprobo: "",
   lineStopped: "Todos", lineStoppedHorasMin: "", lineStoppedHorasMax: "",
   attachments: "Todos",
+  projectEquipo: "Todos",
 };
