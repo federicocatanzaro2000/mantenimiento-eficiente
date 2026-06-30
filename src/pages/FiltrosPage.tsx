@@ -392,6 +392,16 @@ export default function FiltrosPage() {
             <RangoNum min={local.horasRealesMin} max={local.horasRealesMax}
               onMin={(v: string) => set("horasRealesMin", v)} onMax={(v: string) => set("horasRealesMax", v)} />
           </F>
+          <F label="Proyectos / equipo asociado">
+            <Select value={local.projectEquipo} onValueChange={(v) => set("projectEquipo", v as any)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Todos">Todos</SelectItem>
+                <SelectItem value="ConEquipo">Proyectos con equipo</SelectItem>
+                <SelectItem value="SinEquipo">Proyectos sin equipo</SelectItem>
+              </SelectContent>
+            </Select>
+          </F>
         </Section>
 
         <Section title="Impacto productivo">
