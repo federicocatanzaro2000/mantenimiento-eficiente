@@ -45,6 +45,7 @@ export interface Orden {
   aprobo: string;
   lineStopped: boolean | null;
   lineStoppedHours: number | "";
+  projectHasEquipment?: boolean | null;
   attachmentsCount?: number;
   createdAt: string;
   updatedAt: string;
