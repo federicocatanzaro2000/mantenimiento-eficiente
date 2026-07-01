@@ -13,11 +13,12 @@ import { Plus, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { canManageCatalogos } from "@/lib/permissions";
 import {
-  Sector, Person, Equipment, OrderType,
+  Sector, Person, Equipment, OrderType, DocumentCode,
   listSectors, createSector, updateSector,
   listPeople, createPerson, updatePerson,
   listEquipment, createEquipment, updateEquipment,
   listOrderTypes, createOrderType, updateOrderType,
+  listDocumentCodes, createDocumentCode, updateDocumentCode,
 } from "@/lib/catalogos/api";
 
 function Search({ value, onChange }: { value: string; onChange: (v: string) => void }) {
