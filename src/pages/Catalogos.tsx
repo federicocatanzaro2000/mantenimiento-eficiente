@@ -414,11 +414,13 @@ export default function Catalogos() {
           <TabsTrigger value="personas">Personas</TabsTrigger>
           <TabsTrigger value="equipos">Equipos / Máquinas</TabsTrigger>
           <TabsTrigger value="tipos">Tipos de orden</TabsTrigger>
+          <TabsTrigger value="documentos">Códigos de documento</TabsTrigger>
         </TabsList>
         <TabsContent value="sectores" className="mt-4"><SectoresTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="personas" className="mt-4"><PersonasTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="equipos" className="mt-4"><EquiposTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="tipos" className="mt-4"><TiposOrdenTab canEdit={canEdit} /></TabsContent>
+        <TabsContent value="documentos" className="mt-4"><DocumentosTab canEdit={canEdit} /></TabsContent>
       </Tabs>
     </AppLayout>
   );
