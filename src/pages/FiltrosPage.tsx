@@ -199,6 +199,27 @@ export default function FiltrosPage() {
   const optAprobo = useMemo(() => buildPersonOptions(people, "can_be_approver", hist.aprobo), [people, hist.aprobo]);
   const optSector = useMemo(() => buildSectorOptions(sectors, hist.sector), [sectors, hist.sector]);
 
+  const optDocumentCodes = useMemo<SearchOption[]>(() => {
+    const opts: SearchOption[] = [];
+    const seen = new Set<string>();
+    documentCodes
+      .slice()
+      .sort((a, b) => Number(b.active) - Number(a.active) || a.sort_order - b.sort_order || a.code.localeCompare(b.code))
+      .forEach((d) => {
+        const k = d.code.trim();
+        if (!k || seen.has(k.toLowerCase())) return;
+        seen.add(k.toLowerCase());
+        opts.push({ value: k, label: d.description ? `${k} — ${d.description}` : k, inactive: !d.active });
+      });
+    hist.codigoDocumento.forEach((h) => {
+      const k = h.trim();
+      if (!k || seen.has(k.toLowerCase())) return;
+      seen.add(k.toLowerCase());
+      opts.push({ value: k, label: k, inactive: true });
+    });
+    return opts;
+  }, [documentCodes, hist.codigoDocumento]);
+
   // Equipment linked code <-> name
   const equipOpts = useMemo(() => {
     // active first, then inactive; build code & name option sets
