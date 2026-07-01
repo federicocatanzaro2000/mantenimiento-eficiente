@@ -392,7 +392,9 @@ export default function FiltrosPage() {
         </Section>
 
         <Section title="Equipo y horas">
-          <F label="Código documento"><Input value={local.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></F>
+          <F label="Código documento">
+            <SearchSelect value={local.codigoDocumento} onChange={(v) => set("codigoDocumento", v)} options={optDocumentCodes} placeholder="Buscar código de documento..." />
+          </F>
           <F label="Código equipo">
             <SearchSelect value={local.codigoEquipo} onChange={onCodigoEquipo} options={equipOpts.codeOptions} placeholder="Buscar código de equipo..." />
           </F>
