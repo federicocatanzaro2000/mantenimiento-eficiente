@@ -13,8 +13,8 @@ import { aplicarFiltros } from "@/lib/filterOrdenes";
 import { ArrowLeft, Filter as FilterIcon, RotateCcw } from "lucide-react";
 import { SearchSelect, SearchOption } from "@/components/SearchSelect";
 import {
-  listPeople, listSectors, listEquipment, listOrderTypes,
-  Person, Sector as SectorCat, Equipment, PersonField, OrderType,
+  listPeople, listSectors, listEquipment, listOrderTypes, listDocumentCodes,
+  Person, Sector as SectorCat, Equipment, PersonField, OrderType, DocumentCode,
 } from "@/lib/catalogos/api";
 import { toast } from "sonner";
 
@@ -126,9 +126,10 @@ export default function FiltrosPage() {
   const [sectors, setSectors] = useState<SectorCat[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
+  const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   useEffect(() => {
-    Promise.all([listPeople(), listSectors(), listEquipment(), listOrderTypes()])
-      .then(([p, s, e, t]) => { setPeople(p); setSectors(s); setEquipment(e); setOrderTypes(t); })
+    Promise.all([listPeople(), listSectors(), listEquipment(), listOrderTypes(), listDocumentCodes()])
+      .then(([p, s, e, t, d]) => { setPeople(p); setSectors(s); setEquipment(e); setOrderTypes(t); setDocumentCodes(d); })
       .catch((err) => toast.error("Error cargando catálogos: " + err.message));
   }, []);
 
@@ -173,6 +174,7 @@ export default function FiltrosPage() {
       sector: collect("sector"),
       codigoEquipo: collect("codigoEquipo"),
       nombreEquipo: collect("nombreEquipo"),
+      codigoDocumento: collect("codigoDocumento"),
     };
   }, [ordenes]);
 
@@ -196,6 +198,27 @@ export default function FiltrosPage() {
   const optReviso = useMemo(() => buildPersonOptions(people, "can_be_reviewed_by", hist.reviso), [people, hist.reviso]);
   const optAprobo = useMemo(() => buildPersonOptions(people, "can_be_approver", hist.aprobo), [people, hist.aprobo]);
   const optSector = useMemo(() => buildSectorOptions(sectors, hist.sector), [sectors, hist.sector]);
+
+  const optDocumentCodes = useMemo<SearchOption[]>(() => {
+    const opts: SearchOption[] = [];
+    const seen = new Set<string>();
+    documentCodes
+      .slice()
+      .sort((a, b) => Number(b.active) - Number(a.active) || a.sort_order - b.sort_order || a.code.localeCompare(b.code))
+      .forEach((d) => {
+        const k = d.code.trim();
+        if (!k || seen.has(k.toLowerCase())) return;
+        seen.add(k.toLowerCase());
+        opts.push({ value: k, label: d.description ? `${k} — ${d.description}` : k, inactive: !d.active });
+      });
+    hist.codigoDocumento.forEach((h) => {
+      const k = h.trim();
+      if (!k || seen.has(k.toLowerCase())) return;
+      seen.add(k.toLowerCase());
+      opts.push({ value: k, label: k, inactive: true });
+    });
+    return opts;
+  }, [documentCodes, hist.codigoDocumento]);
 
   // Equipment linked code <-> name
   const equipOpts = useMemo(() => {
@@ -369,7 +392,9 @@ export default function FiltrosPage() {
         </Section>
 
         <Section title="Equipo y horas">
-          <F label="Código documento"><Input value={local.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></F>
+          <F label="Código documento">
+            <SearchSelect value={local.codigoDocumento} onChange={(v) => set("codigoDocumento", v)} options={optDocumentCodes} placeholder="Buscar código de documento..." />
+          </F>
           <F label="Código equipo">
             <SearchSelect value={local.codigoEquipo} onChange={onCodigoEquipo} options={equipOpts.codeOptions} placeholder="Buscar código de equipo..." />
           </F>

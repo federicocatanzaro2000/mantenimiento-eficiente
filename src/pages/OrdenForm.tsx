@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { canEditSection, canEditAny, canCreateOrden, SeccionNro } from "@/lib/permissions";
 import { Combobox, ComboboxOption } from "@/components/Combobox";
-import { listSectors, listPeople, listEquipment, listOrderTypes, Sector, Person, Equipment, OrderType } from "@/lib/catalogos/api";
+import { listSectors, listPeople, listEquipment, listOrderTypes, listDocumentCodes, Sector, Person, Equipment, OrderType, DocumentCode } from "@/lib/catalogos/api";
 import { PrintableOrden } from "@/components/PrintableOrden";
 import { MultiPersonSelect } from "@/components/MultiPersonSelect";
 import { OrdenAttachments } from "@/components/OrdenAttachments";
@@ -108,12 +108,13 @@ export default function OrdenForm() {
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
+  const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
-    Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes()])
-      .then(([s, p, e, t]) => { setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t); })
+    Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes(), listDocumentCodes()])
+      .then(([s, p, e, t, d]) => { setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t); setDocumentCodes(d); })
       .catch(() => { /* silencioso, los campos seguirán mostrando snapshot */ });
   }, []);
 
@@ -391,7 +392,31 @@ export default function OrdenForm() {
         </Section>
 
         <Section title="3. Equipo y documentación" seccion={3} canEdit={can3}>
-          <Field label="Código de documento"><Input value={orden.codigoDocumento} onChange={(e) => set("codigoDocumento", e.target.value)} /></Field>
+          <Field label="Código de documento">
+            <Combobox
+              options={(() => {
+                const seen = new Set<string>();
+                const opts: ComboboxOption[] = [];
+                documentCodes
+                  .slice()
+                  .sort((a, b) => Number(b.active) - Number(a.active) || a.sort_order - b.sort_order || a.code.localeCompare(b.code))
+                  .forEach((d) => {
+                    const k = d.code.trim();
+                    if (!k || seen.has(k.toLowerCase())) return;
+                    seen.add(k.toLowerCase());
+                    opts.push({ value: k, label: d.active ? (d.description ? `${k} — ${d.description}` : k) : `${k} (inactivo)`, keywords: d.description ?? "" });
+                  });
+                const cur = orden.codigoDocumento?.trim();
+                if (cur && !seen.has(cur.toLowerCase())) opts.push({ value: cur, label: `${cur} (histórico)` });
+                return opts;
+              })()}
+              value={orden.codigoDocumento}
+              onChange={(v) => set("codigoDocumento", v)}
+              placeholder="Seleccionar código..."
+              allowFreeSnapshot
+              disabled={!can3}
+            />
+          </Field>
 
           {isProyectoTipo(orden.tipoOrden) && (
             <div className="md:col-span-2 lg:col-span-3">

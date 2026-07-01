@@ -20,6 +20,14 @@ export interface OrderType {
   requires_line_stoppage_question: boolean;
 }
 
+export interface DocumentCode {
+  id: string;
+  code: string;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+}
+
 // SECTORS
 export async function listSectors(activeOnly = false): Promise<Sector[]> {
   let q = supabase.from("sectors").select("*").order("sort_order").order("name");
@@ -93,5 +101,26 @@ export async function createOrderType(p: Omit<OrderType, "id">) {
 export async function updateOrderType(id: string, patch: Partial<Omit<OrderType, "id">>) {
   if (patch.name) patch.name = patch.name.trim();
   const { error } = await (supabase as any).from("order_types").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+// DOCUMENT CODES
+export async function listDocumentCodes(activeOnly = false): Promise<DocumentCode[]> {
+  let q = (supabase as any).from("document_codes").select("*").order("sort_order").order("code");
+  if (activeOnly) q = q.eq("active", true);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as DocumentCode[];
+}
+export async function createDocumentCode(p: Omit<DocumentCode, "id">) {
+  const { error } = await (supabase as any).from("document_codes").insert({
+    ...p, code: p.code.trim(), description: p.description?.trim() || null,
+  });
+  if (error) throw error;
+}
+export async function updateDocumentCode(id: string, patch: Partial<Omit<DocumentCode, "id">>) {
+  if (patch.code) patch.code = patch.code.trim();
+  if (patch.description !== undefined) patch.description = patch.description?.trim() || null;
+  const { error } = await (supabase as any).from("document_codes").update(patch).eq("id", id);
   if (error) throw error;
 }

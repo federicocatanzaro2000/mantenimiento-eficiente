@@ -13,11 +13,12 @@ import { Plus, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { canManageCatalogos } from "@/lib/permissions";
 import {
-  Sector, Person, Equipment, OrderType,
+  Sector, Person, Equipment, OrderType, DocumentCode,
   listSectors, createSector, updateSector,
   listPeople, createPerson, updatePerson,
   listEquipment, createEquipment, updateEquipment,
   listOrderTypes, createOrderType, updateOrderType,
+  listDocumentCodes, createDocumentCode, updateDocumentCode,
 } from "@/lib/catalogos/api";
 
 function Search({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -337,6 +338,70 @@ function TiposOrdenTab({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+
+function DocumentosTab({ canEdit }: { canEdit: boolean }) {
+  const [items, setItems] = useState<DocumentCode[]>([]);
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState<DocumentCode | null>(null);
+  const [code, setCode] = useState("");
+  const [desc, setDesc] = useState("");
+  const [sort, setSort] = useState(0);
+  const load = () => listDocumentCodes().then(setItems).catch((e) => toast.error(e.message));
+  useEffect(() => { load(); }, []);
+  const openNew = () => { setEdit(null); setCode(""); setDesc(""); setSort((items.at(-1)?.sort_order ?? 0) + 10); setOpen(true); };
+  const openEdit = (d: DocumentCode) => { setEdit(d); setCode(d.code); setDesc(d.description ?? ""); setSort(d.sort_order); setOpen(true); };
+  const save = async () => {
+    if (!code.trim()) return toast.error("Código obligatorio");
+    try {
+      if (edit) await updateDocumentCode(edit.id, { code, description: desc, sort_order: sort });
+      else await createDocumentCode({ code, description: desc, active: true, sort_order: sort });
+      toast.success("Guardado"); setOpen(false); load();
+    } catch (e: any) {
+      toast.error(e.message?.includes("duplicate") ? "Ya existe un código igual" : e.message);
+    }
+  };
+  const toggle = async (d: DocumentCode) => { try { await updateDocumentCode(d.id, { active: !d.active }); load(); } catch (e: any) { toast.error(e.message); } };
+  const ql = q.toLowerCase();
+  const filtered = items.filter((d) => d.code.toLowerCase().includes(ql) || (d.description ?? "").toLowerCase().includes(ql));
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Search value={q} onChange={setQ} />
+        {canEdit && <Button onClick={openNew} className="gap-1"><Plus className="h-4 w-4" /> Agregar código</Button>}
+      </div>
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader><TableRow><TableHead className="w-48">Código</TableHead><TableHead>Descripción</TableHead><TableHead className="w-24">Orden</TableHead><TableHead className="w-32">Activo</TableHead><TableHead className="w-16"></TableHead></TableRow></TableHeader>
+          <TableBody>
+            {filtered.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Sin resultados</TableCell></TableRow>}
+            {filtered.map((d) => (
+              <TableRow key={d.id}>
+                <TableCell className={`font-mono ${!d.active ? "text-muted-foreground line-through" : ""}`}>{d.code}</TableCell>
+                <TableCell className={!d.active ? "text-muted-foreground line-through" : ""}>{d.description ?? ""}</TableCell>
+                <TableCell>{d.sort_order}</TableCell>
+                <TableCell><Switch checked={d.active} onCheckedChange={() => toggle(d)} disabled={!canEdit} /></TableCell>
+                <TableCell>{canEdit && <Button size="icon" variant="ghost" onClick={() => openEdit(d)}><Pencil className="h-4 w-4" /></Button>}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{edit ? "Editar código de documento" : "Nuevo código de documento"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Código</Label><Input value={code} onChange={(e) => setCode(e.target.value)} /></div>
+            <div><Label>Descripción (opcional)</Label><Input value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+            <div><Label>Orden</Label><Input type="number" value={sort} onChange={(e) => setSort(Number(e.target.value) || 0)} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button><Button onClick={save}>Guardar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function Catalogos() {
   const { roles } = useAuth();
   const canEdit = canManageCatalogos(roles);
@@ -349,11 +414,13 @@ export default function Catalogos() {
           <TabsTrigger value="personas">Personas</TabsTrigger>
           <TabsTrigger value="equipos">Equipos / Máquinas</TabsTrigger>
           <TabsTrigger value="tipos">Tipos de orden</TabsTrigger>
+          <TabsTrigger value="documentos">Códigos de documento</TabsTrigger>
         </TabsList>
         <TabsContent value="sectores" className="mt-4"><SectoresTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="personas" className="mt-4"><PersonasTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="equipos" className="mt-4"><EquiposTab canEdit={canEdit} /></TabsContent>
         <TabsContent value="tipos" className="mt-4"><TiposOrdenTab canEdit={canEdit} /></TabsContent>
+        <TabsContent value="documentos" className="mt-4"><DocumentosTab canEdit={canEdit} /></TabsContent>
       </Tabs>
     </AppLayout>
   );
