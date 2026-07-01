@@ -20,6 +20,14 @@ export interface OrderType {
   requires_line_stoppage_question: boolean;
 }
 
+export interface DocumentCode {
+  id: string;
+  code: string;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+}
+
 // SECTORS
 export async function listSectors(activeOnly = false): Promise<Sector[]> {
   let q = supabase.from("sectors").select("*").order("sort_order").order("name");
