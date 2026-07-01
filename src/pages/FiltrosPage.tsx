@@ -126,9 +126,10 @@ export default function FiltrosPage() {
   const [sectors, setSectors] = useState<SectorCat[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
+  const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   useEffect(() => {
-    Promise.all([listPeople(), listSectors(), listEquipment(), listOrderTypes()])
-      .then(([p, s, e, t]) => { setPeople(p); setSectors(s); setEquipment(e); setOrderTypes(t); })
+    Promise.all([listPeople(), listSectors(), listEquipment(), listOrderTypes(), listDocumentCodes()])
+      .then(([p, s, e, t, d]) => { setPeople(p); setSectors(s); setEquipment(e); setOrderTypes(t); setDocumentCodes(d); })
       .catch((err) => toast.error("Error cargando catálogos: " + err.message));
   }, []);
 
