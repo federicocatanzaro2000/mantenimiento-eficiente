@@ -174,6 +174,7 @@ export default function FiltrosPage() {
       sector: collect("sector"),
       codigoEquipo: collect("codigoEquipo"),
       nombreEquipo: collect("nombreEquipo"),
+      codigoDocumento: collect("codigoDocumento"),
     };
   }, [ordenes]);
 
