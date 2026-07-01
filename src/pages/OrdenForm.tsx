@@ -108,12 +108,13 @@ export default function OrdenForm() {
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
+  const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
-    Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes()])
-      .then(([s, p, e, t]) => { setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t); })
+    Promise.all([listSectors(), listPeople(), listEquipment(), listOrderTypes(), listDocumentCodes()])
+      .then(([s, p, e, t, d]) => { setSectors(s); setPeople(p); setEquipos(e); setOrderTypes(t); setDocumentCodes(d); })
       .catch(() => { /* silencioso, los campos seguirán mostrando snapshot */ });
   }, []);
 
