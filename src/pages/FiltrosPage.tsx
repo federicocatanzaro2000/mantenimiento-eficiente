@@ -13,8 +13,8 @@ import { aplicarFiltros } from "@/lib/filterOrdenes";
 import { ArrowLeft, Filter as FilterIcon, RotateCcw } from "lucide-react";
 import { SearchSelect, SearchOption } from "@/components/SearchSelect";
 import {
-  listPeople, listSectors, listEquipment, listOrderTypes,
-  Person, Sector as SectorCat, Equipment, PersonField, OrderType,
+  listPeople, listSectors, listEquipment, listOrderTypes, listDocumentCodes,
+  Person, Sector as SectorCat, Equipment, PersonField, OrderType, DocumentCode,
 } from "@/lib/catalogos/api";
 import { toast } from "sonner";
 
