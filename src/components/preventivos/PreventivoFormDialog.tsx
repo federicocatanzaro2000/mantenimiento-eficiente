@@ -93,7 +93,9 @@ const empty = (year?: number, month?: number): FormState => ({
 export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSaved }: Props) {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [form, setForm] = useState<FormState>(empty());
+  const [materials, setMaterials] = useState<PreventiveMaterial[]>([]);
   const [saving, setSaving] = useState(false);
+
 
   // ¿La ocurrencia editada pertenece a una serie?
   const isOccurrenceOfSeries = !!item?.recurrence_parent_id;
