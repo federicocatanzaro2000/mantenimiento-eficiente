@@ -95,6 +95,7 @@ export type Database = {
           id: string
           line_stopped: boolean | null
           line_stopped_hours: number | null
+          materiales_previstos: Json
           materiales_utilizados: Json
           nombre_equipo: string | null
           nro_orden: number
@@ -137,6 +138,7 @@ export type Database = {
           id?: string
           line_stopped?: boolean | null
           line_stopped_hours?: number | null
+          materiales_previstos?: Json
           materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden: number
@@ -179,6 +181,7 @@ export type Database = {
           id?: string
           line_stopped?: boolean | null
           line_stopped_hours?: number | null
+          materiales_previstos?: Json
           materiales_utilizados?: Json
           nombre_equipo?: string | null
           nro_orden?: number
@@ -298,6 +301,7 @@ export type Database = {
           frequency_label: string | null
           id: string
           is_recurrence_parent: boolean
+          materiales_previstos: Json
           notes: string | null
           preventive_type: string
           recurrence_parent_id: string | null
@@ -330,6 +334,7 @@ export type Database = {
           frequency_label?: string | null
           id?: string
           is_recurrence_parent?: boolean
+          materiales_previstos?: Json
           notes?: string | null
           preventive_type?: string
           recurrence_parent_id?: string | null
@@ -362,6 +367,7 @@ export type Database = {
           frequency_label?: string | null
           id?: string
           is_recurrence_parent?: boolean
+          materiales_previstos?: Json
           notes?: string | null
           preventive_type?: string
           recurrence_parent_id?: string | null
