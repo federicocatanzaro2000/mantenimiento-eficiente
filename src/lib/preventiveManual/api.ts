@@ -280,6 +280,8 @@ export async function createPreventiveWithRecurrence(
     estimated_hours: input.estimated_hours ?? null,
     notes: input.notes ?? null,
     source: input.source ?? "manual",
+    materiales_previstos: (input.materiales_previstos ?? []) as any,
+
     repeat_enabled: !!recurrence.repeat_enabled,
     is_recurrence_parent: !!recurrence.repeat_enabled,
     repeat_every: recurrence.repeat_enabled ? recurrence.repeat_every ?? null : null,
