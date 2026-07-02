@@ -448,7 +448,75 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
               </div>
             )}
           </div>
+
+          {/* ============ Materiales necesarios ============ */}
+          <div className="col-span-2 border-t pt-3 mt-1">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <Package className="h-4 w-4" /> Materiales necesarios <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => setMaterials((ms) => [...ms, mkMat()])}>
+                <Plus className="h-3 w-3" /> Agregar material
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Se copiarán automáticamente a la OIT al generarla como "Materiales previstos".
+            </p>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-xs border rounded">
+                <thead className="bg-muted/50">
+                  <tr className="text-left">
+                    <th className="p-2 w-28">Código</th>
+                    <th className="p-2">Descripción</th>
+                    <th className="p-2 w-24">Cantidad</th>
+                    <th className="p-2 w-28">Unidad</th>
+                    <th className="p-2">Observaciones</th>
+                    <th className="p-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                        Sin materiales cargados
+                      </td>
+                    </tr>
+                  )}
+                  {materials.map((m, i) => (
+                    <tr key={m.id} className="border-t">
+                      <td className="p-1">
+                        <Input className="h-8" value={m.codigo} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, codigo: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" value={m.descripcion} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, descripcion: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" type="number" min={0} step="any" value={m.cantidad}
+                          onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, cantidad: e.target.value === "" ? "" : Number(e.target.value) } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" list="material-units" value={m.unidad ?? ""} placeholder="unidad"
+                          onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, unidad: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" value={m.observaciones ?? ""} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, observaciones: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Button type="button" size="icon" variant="ghost" onClick={() => setMaterials((ms) => ms.filter((_, ix) => ix !== i))}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <datalist id="material-units">
+                {MATERIAL_UNITS.map((u) => <option key={u} value={u} />)}
+              </datalist>
+            </div>
+          </div>
         </div>
+
 
         <DialogFooter className="gap-2 flex-wrap">
           {item && isOccurrenceOfSeries && (
