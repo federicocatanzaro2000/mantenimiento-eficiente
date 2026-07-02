@@ -61,6 +61,8 @@ export async function createPreventive(input: PreventiveItemInput): Promise<Prev
       estimated_hours: input.estimated_hours ?? null,
       notes: input.notes ?? null,
       source: input.source ?? "manual",
+      materiales_previstos: (input.materiales_previstos ?? []) as any,
+
     })
     .select()
     .single();
