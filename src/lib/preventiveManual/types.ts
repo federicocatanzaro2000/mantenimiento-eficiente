@@ -38,7 +38,20 @@ export interface PreventiveItem {
   repeat_end_mode: RepeatEndMode | null;
   repeat_end_date: string | null;
   repeat_count: number | null;
+  materiales_previstos?: PreventiveMaterial[] | null;
 }
+
+export interface PreventiveMaterial {
+  id: string;
+  codigo: string;
+  descripcion: string;
+  cantidad: number | "";
+  unidad?: string;
+  observaciones?: string;
+}
+
+export const MATERIAL_UNITS = ["unidad", "kg", "litros", "metros", "paquetes", "cajas"] as const;
+
 
 export interface PreventiveItemInput {
   scheduled_date: string;
