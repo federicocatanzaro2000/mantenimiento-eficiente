@@ -12,6 +12,7 @@ import { Equipment, listEquipment } from "@/lib/catalogos/api";
 import {
   PreventiveItem,
   PreventiveItemInput,
+  PreventiveMaterial,
   PREVENTIVE_TYPES,
   PREVENTIVE_STATUSES,
   PreventiveType,
@@ -19,7 +20,9 @@ import {
   RepeatUnit,
   RepeatEndMode,
   RecurrenceInput,
+  MATERIAL_UNITS,
 } from "@/lib/preventiveManual/types";
+
 import {
   createPreventiveWithRecurrence,
   updatePreventive,
@@ -29,7 +32,17 @@ import {
 } from "@/lib/preventiveManual/api";
 import { describeRule } from "@/lib/preventiveManual/recurrence";
 import { toast } from "@/hooks/use-toast";
-import { Repeat } from "lucide-react";
+import { Repeat, Plus, Trash2, Package } from "lucide-react";
+
+const mkMat = (): PreventiveMaterial => ({
+  id: Math.random().toString(36).slice(2, 10),
+  codigo: "",
+  descripcion: "",
+  cantidad: "",
+  unidad: "",
+  observaciones: "",
+});
+
 
 interface Props {
   open: boolean;
@@ -80,7 +93,9 @@ const empty = (year?: number, month?: number): FormState => ({
 export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSaved }: Props) {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [form, setForm] = useState<FormState>(empty());
+  const [materials, setMaterials] = useState<PreventiveMaterial[]>([]);
   const [saving, setSaving] = useState(false);
+
 
   // ¿La ocurrencia editada pertenece a una serie?
   const isOccurrenceOfSeries = !!item?.recurrence_parent_id;
@@ -111,6 +126,16 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         repeat_end_date: item.repeat_end_date ?? "",
         repeat_count: item.repeat_count ? String(item.repeat_count) : "",
       });
+      const raw = Array.isArray(item.materiales_previstos) ? item.materiales_previstos : [];
+      setMaterials(raw.map((m: any) => ({
+        id: m.id ?? Math.random().toString(36).slice(2, 10),
+        codigo: m.codigo ?? "",
+        descripcion: m.descripcion ?? "",
+        cantidad: m.cantidad ?? "",
+        unidad: m.unidad ?? "",
+        observaciones: m.observaciones ?? "",
+      })));
+
     } else {
       const base = empty(prefill?.year, prefill?.month);
       setForm({
@@ -123,7 +148,9 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         preventive_type: prefill?.preventive_type ?? base.preventive_type,
         frequency_label: prefill?.frequency_label ?? base.frequency_label,
       });
+      setMaterials([]);
     }
+
   }, [open, item, prefill]);
 
   const opts = equipment.map((e) => ({ value: e.code, label: `${e.code} - ${e.name}` }));
@@ -152,6 +179,16 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
   }
 
   function getInput(): PreventiveItemInput {
+    const cleanMats = materials
+      .map((m) => ({
+        id: m.id,
+        codigo: (m.codigo ?? "").trim(),
+        descripcion: (m.descripcion ?? "").trim(),
+        cantidad: m.cantidad === "" || m.cantidad === null || m.cantidad === undefined ? "" : Number(m.cantidad),
+        unidad: (m.unidad ?? "").trim(),
+        observaciones: (m.observaciones ?? "").trim(),
+      }))
+      .filter((m) => m.codigo || m.descripcion || (m.cantidad !== "" && !Number.isNaN(Number(m.cantidad))));
     return {
       scheduled_date: form.scheduled_date,
       equipment_id: form.equipment_id,
@@ -164,8 +201,10 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
       estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : null,
       notes: form.notes.trim() || null,
       source: "manual",
+      materiales_previstos: cleanMats as PreventiveMaterial[],
     };
   }
+
 
   function getRecurrence(): RecurrenceInput {
     return {
@@ -409,7 +448,75 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
               </div>
             )}
           </div>
+
+          {/* ============ Materiales necesarios ============ */}
+          <div className="col-span-2 border-t pt-3 mt-1">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <Package className="h-4 w-4" /> Materiales necesarios <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => setMaterials((ms) => [...ms, mkMat()])}>
+                <Plus className="h-3 w-3" /> Agregar material
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Se copiarán automáticamente a la OIT al generarla como "Materiales previstos".
+            </p>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-xs border rounded">
+                <thead className="bg-muted/50">
+                  <tr className="text-left">
+                    <th className="p-2 w-28">Código</th>
+                    <th className="p-2">Descripción</th>
+                    <th className="p-2 w-24">Cantidad</th>
+                    <th className="p-2 w-28">Unidad</th>
+                    <th className="p-2">Observaciones</th>
+                    <th className="p-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                        Sin materiales cargados
+                      </td>
+                    </tr>
+                  )}
+                  {materials.map((m, i) => (
+                    <tr key={m.id} className="border-t">
+                      <td className="p-1">
+                        <Input className="h-8" value={m.codigo} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, codigo: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" value={m.descripcion} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, descripcion: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" type="number" min={0} step="any" value={m.cantidad}
+                          onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, cantidad: e.target.value === "" ? "" : Number(e.target.value) } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" list="material-units" value={m.unidad ?? ""} placeholder="unidad"
+                          onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, unidad: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" value={m.observaciones ?? ""} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, observaciones: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Button type="button" size="icon" variant="ghost" onClick={() => setMaterials((ms) => ms.filter((_, ix) => ix !== i))}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <datalist id="material-units">
+                {MATERIAL_UNITS.map((u) => <option key={u} value={u} />)}
+              </datalist>
+            </div>
+          </div>
         </div>
+
 
         <DialogFooter className="gap-2 flex-wrap">
           {item && isOccurrenceOfSeries && (

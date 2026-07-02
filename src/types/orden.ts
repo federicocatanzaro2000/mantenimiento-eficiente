@@ -8,7 +8,10 @@ export interface Material {
   cantidad: number | "";
   descripcion: string;
   codigo: string;
+  unidad?: string;
+  observaciones?: string;
 }
+
 
 export interface Orden {
   id: string;
@@ -37,6 +40,8 @@ export interface Orden {
   sectorLimpioOrdenado: boolean;
   herramientasLimpiasOrdenadas: boolean;
   materialesUtilizados: Material[];
+  materialesPrevistos?: Material[];
+
   controlLiberacionCalidad: boolean;
   responsableControlCalidad: string;
   comentarioCalidad?: string;

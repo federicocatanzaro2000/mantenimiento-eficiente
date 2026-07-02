@@ -32,6 +32,8 @@ export function rowToOrden(r: any): Orden {
     sectorLimpioOrdenado: !!r.sector_limpio_ordenado,
     herramientasLimpiasOrdenadas: !!r.herramientas_limpias_ordenadas,
     materialesUtilizados: (r.materiales_utilizados ?? []) as Material[],
+    materialesPrevistos: (r.materiales_previstos ?? []) as Material[],
+
     controlLiberacionCalidad: !!r.control_liberacion_calidad,
     responsableControlCalidad: r.responsable_control_calidad ?? "",
     comentarioCalidad: r.comentario_calidad ?? "",
@@ -79,6 +81,8 @@ function ordenToRow(o: Orden) {
     sector_limpio_ordenado: o.sectorLimpioOrdenado,
     herramientas_limpias_ordenadas: o.herramientasLimpiasOrdenadas,
     materiales_utilizados: o.materialesUtilizados as any,
+    materiales_previstos: (o.materialesPrevistos ?? []) as any,
+
     control_liberacion_calidad: o.controlLiberacionCalidad,
     responsable_control_calidad: o.responsableControlCalidad,
     comentario_calidad: o.comentarioCalidad ?? "",

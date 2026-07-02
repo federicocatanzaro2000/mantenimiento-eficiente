@@ -514,7 +514,41 @@ export default function OrdenForm() {
           </div>
         </Section>
 
+        {(orden.materialesPrevistos && orden.materialesPrevistos.length > 0) && (
+          <div className="bg-card border border-border rounded-md shadow-sm">
+            <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md flex items-center justify-between">
+              <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">Materiales previstos (desde preventivo)</h2>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground"><Lock className="h-3 w-3" /> Solo lectura</span>
+            </div>
+            <div className="overflow-x-auto opacity-90">
+              <table className="erp-table">
+                <thead>
+                  <tr>
+                    <th className="w-32">Código</th>
+                    <th>Descripción</th>
+                    <th className="w-24">Cantidad</th>
+                    <th className="w-24">Unidad</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orden.materialesPrevistos.map((m) => (
+                    <tr key={m.id}>
+                      <td>{m.codigo || "-"}</td>
+                      <td>{m.descripcion || "-"}</td>
+                      <td>{m.cantidad === "" || m.cantidad == null ? "-" : m.cantidad}</td>
+                      <td>{m.unidad || "-"}</td>
+                      <td>{m.observaciones || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="bg-card border border-border rounded-md shadow-sm">
+
           <div className="bg-secondary px-4 py-2 border-b border-border rounded-t-md flex items-center justify-between">
             <h2 className="font-semibold text-sm uppercase tracking-wide text-secondary-foreground">5. Materiales utilizados</h2>
             <div className="flex items-center gap-2">

@@ -61,6 +61,8 @@ export async function createPreventive(input: PreventiveItemInput): Promise<Prev
       estimated_hours: input.estimated_hours ?? null,
       notes: input.notes ?? null,
       source: input.source ?? "manual",
+      materiales_previstos: (input.materiales_previstos ?? []) as any,
+
     })
     .select()
     .single();
@@ -148,7 +150,9 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
     trabajo_solicitado: item.task_name,
     descripcion_problema: `Preventivo: ${item.task_name}${item.frequency_label ? ` (${item.frequency_label})` : ""}`,
     observaciones: item.notes ?? "",
+    materiales_previstos: (Array.isArray(item.materiales_previstos) ? item.materiales_previstos : []) as any,
   }).select("id").single();
+
   if (error) throw error;
   const ordenId = data.id as string;
   await updatePreventive(item.id, { work_order_id: ordenId, status: "Con OIT" });
@@ -276,6 +280,8 @@ export async function createPreventiveWithRecurrence(
     estimated_hours: input.estimated_hours ?? null,
     notes: input.notes ?? null,
     source: input.source ?? "manual",
+    materiales_previstos: (input.materiales_previstos ?? []) as any,
+
     repeat_enabled: !!recurrence.repeat_enabled,
     is_recurrence_parent: !!recurrence.repeat_enabled,
     repeat_every: recurrence.repeat_enabled ? recurrence.repeat_every ?? null : null,
@@ -375,7 +381,9 @@ export async function updateSeries(
     "responsible_id",
     "estimated_hours",
     "notes",
+    "materiales_previstos",
   ];
+
   for (const k of replicateKeys) {
     if (patch[k] !== undefined) (childPatch as any)[k] = (patch as any)[k];
   }
