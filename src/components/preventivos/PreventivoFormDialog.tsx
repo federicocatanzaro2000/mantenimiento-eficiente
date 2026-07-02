@@ -126,6 +126,16 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         repeat_end_date: item.repeat_end_date ?? "",
         repeat_count: item.repeat_count ? String(item.repeat_count) : "",
       });
+      const raw = Array.isArray(item.materiales_previstos) ? item.materiales_previstos : [];
+      setMaterials(raw.map((m: any) => ({
+        id: m.id ?? Math.random().toString(36).slice(2, 10),
+        codigo: m.codigo ?? "",
+        descripcion: m.descripcion ?? "",
+        cantidad: m.cantidad ?? "",
+        unidad: m.unidad ?? "",
+        observaciones: m.observaciones ?? "",
+      })));
+
     } else {
       const base = empty(prefill?.year, prefill?.month);
       setForm({
