@@ -135,9 +135,41 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
           </div>
         </section>
 
-        {/* 5. Materiales utilizados */}
+        {/* Materiales previstos (desde preventivo) */}
+        <section className="po-section po-s-mat-prev">
+          <SectionTitle n={5} title="Materiales previstos" />
+          {matsPrev.length === 0 ? (
+            <div className="po-empty">No se cargaron materiales previstos.</div>
+          ) : (
+            <table className="po-table">
+              <thead>
+                <tr>
+                  <th style={{ width: "15%" }}>Código</th>
+                  <th>Descripción</th>
+                  <th style={{ width: "12%" }}>Cantidad</th>
+                  <th style={{ width: "12%" }}>Unidad</th>
+                  <th style={{ width: "25%" }}>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matsPrev.map((m) => (
+                  <tr key={m.id}>
+                    <td>{dash(m.codigo)}</td>
+                    <td>{dash(m.descripcion)}</td>
+                    <td>{dash(m.cantidad)}</td>
+                    <td>{dash(m.unidad)}</td>
+                    <td>{dash(m.observaciones)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        {/* Materiales utilizados */}
         <section className="po-section po-s-mat">
-          <SectionTitle n={5} title="Materiales utilizados" />
+          <SectionTitle n={6} title="Materiales utilizados" />
+
           {mats.length === 0 ? (
             <div className="po-empty">Sin materiales utilizados</div>
           ) : (
