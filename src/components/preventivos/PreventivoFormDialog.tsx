@@ -12,6 +12,7 @@ import { Equipment, listEquipment } from "@/lib/catalogos/api";
 import {
   PreventiveItem,
   PreventiveItemInput,
+  PreventiveMaterial,
   PREVENTIVE_TYPES,
   PREVENTIVE_STATUSES,
   PreventiveType,
@@ -19,7 +20,9 @@ import {
   RepeatUnit,
   RepeatEndMode,
   RecurrenceInput,
+  MATERIAL_UNITS,
 } from "@/lib/preventiveManual/types";
+
 import {
   createPreventiveWithRecurrence,
   updatePreventive,
