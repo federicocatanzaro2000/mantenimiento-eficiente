@@ -148,7 +148,9 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         preventive_type: prefill?.preventive_type ?? base.preventive_type,
         frequency_label: prefill?.frequency_label ?? base.frequency_label,
       });
+      setMaterials([]);
     }
+
   }, [open, item, prefill]);
 
   const opts = equipment.map((e) => ({ value: e.code, label: `${e.code} - ${e.name}` }));
