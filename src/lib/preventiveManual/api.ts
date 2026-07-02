@@ -381,7 +381,9 @@ export async function updateSeries(
     "responsible_id",
     "estimated_hours",
     "notes",
+    "materiales_previstos",
   ];
+
   for (const k of replicateKeys) {
     if (patch[k] !== undefined) (childPatch as any)[k] = (patch as any)[k];
   }
