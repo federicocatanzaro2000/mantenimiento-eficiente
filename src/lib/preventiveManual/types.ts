@@ -66,6 +66,8 @@ export interface PreventiveItemInput {
   estimated_hours?: number | null;
   notes?: string | null;
   source?: PreventiveSource;
+  materiales_previstos?: PreventiveMaterial[] | null;
+
 }
 
 export interface RecurrenceInput {
