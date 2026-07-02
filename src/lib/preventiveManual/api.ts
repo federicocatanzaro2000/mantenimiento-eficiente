@@ -150,7 +150,9 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
     trabajo_solicitado: item.task_name,
     descripcion_problema: `Preventivo: ${item.task_name}${item.frequency_label ? ` (${item.frequency_label})` : ""}`,
     observaciones: item.notes ?? "",
+    materiales_previstos: (Array.isArray(item.materiales_previstos) ? item.materiales_previstos : []) as any,
   }).select("id").single();
+
   if (error) throw error;
   const ordenId = data.id as string;
   await updatePreventive(item.id, { work_order_id: ordenId, status: "Con OIT" });
