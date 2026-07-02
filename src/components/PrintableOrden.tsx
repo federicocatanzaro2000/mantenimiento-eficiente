@@ -137,7 +137,7 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
 
         {/* Materiales previstos (desde preventivo) */}
         <section className="po-section po-s-mat-prev">
-          <SectionTitle n={5} title="Materiales previstos" />
+          <div className="po-section-title"><span className="po-section-n">•</span> Materiales previstos</div>
           {matsPrev.length === 0 ? (
             <div className="po-empty">No se cargaron materiales previstos.</div>
           ) : (
@@ -166,9 +166,10 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
           )}
         </section>
 
-        {/* Materiales utilizados */}
+        {/* 5. Materiales utilizados */}
         <section className="po-section po-s-mat">
-          <SectionTitle n={6} title="Materiales utilizados" />
+          <SectionTitle n={5} title="Materiales utilizados" />
+
 
           {mats.length === 0 ? (
             <div className="po-empty">Sin materiales utilizados</div>
