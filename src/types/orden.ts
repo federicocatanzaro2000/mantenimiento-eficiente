@@ -40,6 +40,8 @@ export interface Orden {
   sectorLimpioOrdenado: boolean;
   herramientasLimpiasOrdenadas: boolean;
   materialesUtilizados: Material[];
+  materialesPrevistos?: Material[];
+
   controlLiberacionCalidad: boolean;
   responsableControlCalidad: string;
   comentarioCalidad?: string;
