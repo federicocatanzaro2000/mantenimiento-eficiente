@@ -81,6 +81,8 @@ function ordenToRow(o: Orden) {
     sector_limpio_ordenado: o.sectorLimpioOrdenado,
     herramientas_limpias_ordenadas: o.herramientasLimpiasOrdenadas,
     materiales_utilizados: o.materialesUtilizados as any,
+    materiales_previstos: (o.materialesPrevistos ?? []) as any,
+
     control_liberacion_calidad: o.controlLiberacionCalidad,
     responsable_control_calidad: o.responsableControlCalidad,
     comentario_calidad: o.comentarioCalidad ?? "",
