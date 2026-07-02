@@ -38,7 +38,7 @@ export interface PreventiveItem {
   repeat_end_mode: RepeatEndMode | null;
   repeat_end_date: string | null;
   repeat_count: number | null;
-  materiales_previstos?: PreventiveMaterial[] | null;
+  materiales_previstos?: any;
 }
 
 export interface PreventiveMaterial {
