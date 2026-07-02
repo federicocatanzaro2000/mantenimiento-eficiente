@@ -32,6 +32,8 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
   const printedAt =
     now.toLocaleDateString("es-AR") + " " + now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
   const mats = orden.materialesUtilizados ?? [];
+  const matsPrev = orden.materialesPrevistos ?? [];
+
 
   return (
     <div className="print-only po-root">
