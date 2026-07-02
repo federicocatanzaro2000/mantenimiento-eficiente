@@ -32,7 +32,17 @@ import {
 } from "@/lib/preventiveManual/api";
 import { describeRule } from "@/lib/preventiveManual/recurrence";
 import { toast } from "@/hooks/use-toast";
-import { Repeat } from "lucide-react";
+import { Repeat, Plus, Trash2, Package } from "lucide-react";
+
+const mkMat = (): PreventiveMaterial => ({
+  id: Math.random().toString(36).slice(2, 10),
+  codigo: "",
+  descripcion: "",
+  cantidad: "",
+  unidad: "",
+  observaciones: "",
+});
+
 
 interface Props {
   open: boolean;
