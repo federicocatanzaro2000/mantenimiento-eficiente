@@ -179,6 +179,16 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
   }
 
   function getInput(): PreventiveItemInput {
+    const cleanMats = materials
+      .map((m) => ({
+        id: m.id,
+        codigo: (m.codigo ?? "").trim(),
+        descripcion: (m.descripcion ?? "").trim(),
+        cantidad: m.cantidad === "" || m.cantidad === null || m.cantidad === undefined ? "" : Number(m.cantidad),
+        unidad: (m.unidad ?? "").trim(),
+        observaciones: (m.observaciones ?? "").trim(),
+      }))
+      .filter((m) => m.codigo || m.descripcion || (m.cantidad !== "" && !Number.isNaN(Number(m.cantidad))));
     return {
       scheduled_date: form.scheduled_date,
       equipment_id: form.equipment_id,
@@ -191,8 +201,10 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
       estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : null,
       notes: form.notes.trim() || null,
       source: "manual",
+      materiales_previstos: cleanMats as PreventiveMaterial[],
     };
   }
+
 
   function getRecurrence(): RecurrenceInput {
     return {
