@@ -62,8 +62,6 @@ const empty = (nro: number): Orden => ({
   updatedAt: new Date().toISOString().slice(0, 10),
 });
 
-const isProyectoTipo = (t: string | undefined | null) =>
-  String(t ?? "").trim().toLowerCase().startsWith("proyecto");
 
 function Section({
   title, seccion, canEdit, children,
