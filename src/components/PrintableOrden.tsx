@@ -110,13 +110,12 @@ export function PrintableOrden({ orden, attachments = [] }: { orden: Orden; atta
         <section className="po-section po-s-equipo">
           <SectionTitle n={3} title="Equipo y documentación" />
           {(() => {
-            const isProyecto = String(orden.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto");
-            const sinEquipo = isProyecto && orden.projectHasEquipment === false;
+            const sinEquipo = orden.projectHasEquipment === false;
             return (
               <div className="po-grid po-grid-3">
                 <F label="Código de documento" value={dash(orden.codigoDocumento)} />
-                <F label="Código de equipo" value={sinEquipo ? "No aplica" : dash(orden.codigoEquipo)} />
-                <F label="Nombre de equipo" value={sinEquipo ? "No aplica" : dash(orden.nombreEquipo)} />
+                <F label="Código de equipo" value={sinEquipo ? "OIT sin equipo asociado" : dash(orden.codigoEquipo)} />
+                <F label="Nombre de equipo" value={sinEquipo ? "OIT sin equipo asociado" : dash(orden.nombreEquipo)} />
               </div>
             );
           })()}
