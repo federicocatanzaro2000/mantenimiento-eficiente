@@ -153,7 +153,7 @@ export default function Listado() {
                   <td><AprobadoBadge aprobado={o.aprobado} /></td>
                   <td>{o.codigoEquipo
                     ? o.codigoEquipo
-                    : (String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false
+                    : (o.projectHasEquipment === false
                       ? <span className="text-xs text-muted-foreground italic">Sin equipo asociado</span>
                       : "")}</td>
                   <td>{o.sector}</td>

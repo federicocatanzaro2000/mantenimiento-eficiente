@@ -94,9 +94,7 @@ function ordenToRow(o: Orden) {
       o.tipoOrden === "Correctivo" && o.lineStopped === true && o.lineStoppedHours !== ""
         ? Number(o.lineStoppedHours)
         : null,
-    project_has_equipment: String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto")
-      ? (o.projectHasEquipment ?? null)
-      : null,
+    project_has_equipment: o.projectHasEquipment ?? null,
   };
 }
 

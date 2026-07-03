@@ -358,8 +358,8 @@ export default function DashboardPage() {
       return arr.length === 0;
     }).length,
     sinEquipo: filtered.filter((o) => {
-      const isProyectoSinEq = String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false;
-      if (isProyectoSinEq) return false;
+      // Si el usuario respondió explícitamente "sin equipo", no es un dato faltante.
+      if (o.projectHasEquipment === false) return false;
       return !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim();
     }).length,
     sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
@@ -865,17 +865,20 @@ export default function DashboardPage() {
           </div>
         </Section>
 
-        {/* Proyectos */}
+        {/* Asociación a equipos */}
         {(() => {
-          const proyectos = filtered.filter((o) => String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto"));
-          const conEq = proyectos.filter((o) => o.projectHasEquipment === true || (o.projectHasEquipment == null && (o.codigoEquipo?.trim() || o.nombreEquipo?.trim())));
-          const sinEq = proyectos.filter((o) => o.projectHasEquipment === false || (o.projectHasEquipment == null && !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()));
+          const total = filtered.length;
+          const conEq = filtered.filter((o) => o.projectHasEquipment === true || (o.projectHasEquipment == null && (o.codigoEquipo?.trim() || o.nombreEquipo?.trim())));
+          const sinEq = filtered.filter((o) => o.projectHasEquipment === false || (o.projectHasEquipment == null && !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()));
+          const pctCon = total > 0 ? Math.round((conEq.length / total) * 100) : 0;
+          const pctSin = total > 0 ? Math.round((sinEq.length / total) * 100) : 0;
           return (
-            <Section title="Proyectos" subtitle="Distribución de OITs tipo Proyecto según asociación a equipos">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <Kpi title="Total proyectos" value={proyectos.length} />
-                <Kpi title="Con equipo asociado" value={conEq.length} onClick={() => goResultados({ projectEquipo: "ConEquipo" } as any)} />
-                <Kpi title="Sin equipo asociado" value={sinEq.length} onClick={() => goResultados({ projectEquipo: "SinEquipo" } as any)} />
+            <Section title="Asociación a equipos" subtitle="Distribución de OITs según si están asociadas a un equipo">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Kpi title="Total OITs" value={total} />
+                <Kpi title="Con equipo asociado" value={conEq.length} sub={`${pctCon}% del total`} onClick={() => goResultados({ projectEquipo: "ConEquipo" } as any)} />
+                <Kpi title="Sin equipo asociado" value={sinEq.length} sub={`${pctSin}% del total`} onClick={() => goResultados({ projectEquipo: "SinEquipo" } as any)} />
+                <Kpi title="% con equipo" value={`${pctCon}%`} />
               </div>
             </Section>
           );
