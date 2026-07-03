@@ -358,8 +358,8 @@ export default function DashboardPage() {
       return arr.length === 0;
     }).length,
     sinEquipo: filtered.filter((o) => {
-      const isProyectoSinEq = String(o.tipoOrden ?? "").trim().toLowerCase().startsWith("proyecto") && o.projectHasEquipment === false;
-      if (isProyectoSinEq) return false;
+      // Si el usuario respondió explícitamente "sin equipo", no es un dato faltante.
+      if (o.projectHasEquipment === false) return false;
       return !o.codigoEquipo?.trim() && !o.nombreEquipo?.trim();
     }).length,
     sinLimite: filtered.filter((o) => !o.fechaLimiteRealizacion).length,
