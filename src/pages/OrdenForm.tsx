@@ -413,40 +413,38 @@ export default function OrdenForm() {
             />
           </Field>
 
-          {isProyectoTipo(orden.tipoOrden) && (
-            <div className="md:col-span-2 lg:col-span-3">
-              <Field label="¿Este proyecto está asociado a un equipo?" required>
-                <div className="flex gap-4 h-10 items-center">
-                  {([["Sí", true], ["No", false]] as const).map(([lbl, val]) => (
-                    <label key={lbl} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="radio"
-                        name="project_has_equipment"
-                        checked={orden.projectHasEquipment === val}
-                        onChange={() => setOrden((o) => o ? ({
-                          ...o,
-                          projectHasEquipment: val,
-                          codigoEquipo: val ? o.codigoEquipo : "",
-                          nombreEquipo: val ? o.nombreEquipo : "",
-                        }) : o)}
-                        disabled={!can3}
-                      />
-                      {lbl}
-                    </label>
-                  ))}
-                </div>
-                {orden.projectHasEquipment === false && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Este proyecto se registrará sin equipo asociado.
-                  </p>
-                )}
-              </Field>
-            </div>
-          )}
+          <div className="md:col-span-2 lg:col-span-3">
+            <Field label="¿Esta OIT está asociada a un equipo?" required>
+              <div className="flex gap-4 h-10 items-center">
+                {([["Sí", true], ["No", false]] as const).map(([lbl, val]) => (
+                  <label key={lbl} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="project_has_equipment"
+                      checked={orden.projectHasEquipment === val}
+                      onChange={() => setOrden((o) => o ? ({
+                        ...o,
+                        projectHasEquipment: val,
+                        codigoEquipo: val ? o.codigoEquipo : "",
+                        nombreEquipo: val ? o.nombreEquipo : "",
+                      }) : o)}
+                      disabled={!can3}
+                    />
+                    {lbl}
+                  </label>
+                ))}
+              </div>
+              {orden.projectHasEquipment === false && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Esta OIT se registrará sin equipo asociado.
+                </p>
+              )}
+            </Field>
+          </div>
 
-          {(!isProyectoTipo(orden.tipoOrden) || orden.projectHasEquipment === true) && (
+          {orden.projectHasEquipment === true && (
             <>
-              <Field label="Código de equipo" required={isProyectoTipo(orden.tipoOrden)}>
+              <Field label="Código de equipo" required>
                 <Combobox
                   options={equipos.filter((e) => e.active).map<ComboboxOption>((e) => ({ value: e.code, label: `${e.code} — ${e.name}`, keywords: e.name }))}
                   value={orden.codigoEquipo}
@@ -456,7 +454,7 @@ export default function OrdenForm() {
                   }}
                   disabled={!can3} allowFreeSnapshot placeholder="Seleccionar código..." />
               </Field>
-              <Field label="Nombre de equipo" required={isProyectoTipo(orden.tipoOrden)}>
+              <Field label="Nombre de equipo" required>
                 <Combobox
                   options={Array.from(new Set(equipos.filter((e) => e.active).map((e) => e.name))).sort().map<ComboboxOption>((n) => ({ value: n, label: n }))}
                   value={orden.nombreEquipo}
