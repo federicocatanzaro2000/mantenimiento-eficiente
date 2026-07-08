@@ -89,10 +89,10 @@ function ordenToRow(o: Orden) {
     elaboro: o.elaboro,
     reviso: o.reviso,
     aprobo: o.aprobo,
-    line_stopped: o.tipoOrden === "Correctivo" ? (o.lineStopped ?? null) : null,
+    line_stopped: o.lineStopped === true ? true : o.lineStopped === false ? false : null,
     line_stopped_hours:
-      o.tipoOrden === "Correctivo" && o.lineStopped === true && o.lineStoppedHours !== ""
-        ? Number(o.lineStoppedHours)
+      o.lineStopped === true && o.lineStoppedHours !== "" && o.lineStoppedHours !== null
+        ? Number(String(o.lineStoppedHours).replace(",", "."))
         : null,
     project_has_equipment: o.projectHasEquipment ?? null,
   };

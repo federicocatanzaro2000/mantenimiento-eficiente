@@ -360,13 +360,16 @@ export default function OrdenForm() {
               {orden.lineStopped === true && (
                 <Field label="Horas de línea parada" required>
                   <Input
-                    type="number"
-                    min={0}
-                    step="0.25"
+                    type="text"
+                    inputMode="decimal"
                     value={orden.lineStoppedHours}
-                    onChange={(e) =>
-                      set("lineStoppedHours", e.target.value === "" ? "" : Number(e.target.value))
-                    }
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(",", ".");
+                      if (raw === "") { set("lineStoppedHours", ""); return; }
+                      if (!/^\d*\.?\d*$/.test(raw)) return;
+                      const n = Number(raw);
+                      set("lineStoppedHours", isNaN(n) ? "" : n);
+                    }}
                   />
                 </Field>
               )}
