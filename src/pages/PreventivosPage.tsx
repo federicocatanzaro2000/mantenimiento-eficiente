@@ -106,14 +106,13 @@ export default function PreventivosPage() {
   const indicators = useMemo(() => {
     const total = filtered.length;
     let vencidos = 0, prox7 = 0, prox30 = 0, conOIT = 0, sinOIT = 0, realizados = 0;
-    const t = new Date(todayISO);
     for (const it of filtered) {
       const st = effectiveStatus(it, todayISO);
       if (st === "Vencido") vencidos++;
       if (st === "Realizado") realizados++;
       if (it.work_order_id) conOIT++; else sinOIT++;
-      const d = new Date(it.scheduled_date);
-      const diff = Math.round((+d - +t) / 86400000);
+      if (st === "Realizado" || st === "Cancelado" || st === "Vencido") continue;
+      const diff = daysBetweenISO(it.scheduled_date, todayISO);
       if (diff >= 0 && diff <= 7) prox7++;
       if (diff >= 0 && diff <= 30) prox30++;
     }
