@@ -17,6 +17,10 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 
 import Catalogos from "./pages/Catalogos";
 import PreventivosPage from "./pages/PreventivosPage";
+import RelevamientosPage from "./pages/RelevamientosPage";
+import RelevamientoNuevo from "./pages/RelevamientoNuevo";
+import RelevamientoDetail from "./pages/RelevamientoDetail";
+import RelevamientoCatalogo from "./pages/RelevamientoCatalogo";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -39,6 +43,10 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             
             <Route path="/preventivos" element={<ProtectedRoute><PreventivosPage /></ProtectedRoute>} />
+            <Route path="/relevamientos" element={<ProtectedRoute><RelevamientosPage /></ProtectedRoute>} />
+            <Route path="/relevamientos/nuevo" element={<ProtectedRoute><RelevamientoNuevo /></ProtectedRoute>} />
+            <Route path="/relevamientos/catalogo" element={<ProtectedRoute><RelevamientoCatalogo /></ProtectedRoute>} />
+            <Route path="/relevamientos/:id" element={<ProtectedRoute><RelevamientoDetail /></ProtectedRoute>} />
             <Route path="/catalogos" element={<ProtectedRoute><Catalogos /></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute requireAdmin><AdminUsuarios /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
