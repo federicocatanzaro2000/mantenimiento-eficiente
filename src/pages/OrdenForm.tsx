@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
 import { Material, Orden } from "@/types/orden";
@@ -97,9 +97,11 @@ function Field({ label, children, required }: { label: string; children: React.R
 export default function OrdenForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { ordenes, loaded, loadAll, addOrden, updateOrden, nextNroOrden, nombreDe } = useOrdenesStore();
   const { roles } = useAuth();
   const isEdit = id && id !== "nueva";
+  const relevamientoId = !isEdit ? searchParams.get("relevamiento_id") : null;
   const [orden, setOrden] = useState<Orden | null>(null);
   const [saving, setSaving] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -123,7 +125,31 @@ export default function OrdenForm() {
       const found = ordenes.find((o) => o.id === id);
       if (found) setOrden({ ...found });
     } else if (loaded && !orden) {
-      setOrden(empty(nextNroOrden()));
+      const base = empty(nextNroOrden());
+      // Prefill desde relevamiento (query params)
+      if (relevamientoId) {
+        const solicitante = searchParams.get("solicitante") || "";
+        const descripcion = searchParams.get("descripcion") || "";
+        const prioridad = searchParams.get("prioridad") || "";
+        const involEquipo = searchParams.get("involucrado_equipo") || "";
+        const sectorPre = searchParams.get("sector") || "";
+        const sinEquipo = searchParams.get("sin_equipo") === "1";
+        base.solicitante = solicitante;
+        base.descripcionProblema = descripcion;
+        base.trabajoSolicitado = descripcion;
+        base.tipoOrden = "Correctivo" as Orden["tipoOrden"];
+        if (prioridad === "Alta" || prioridad === "Media" || prioridad === "Baja") {
+          base.prioridad = prioridad as Orden["prioridad"];
+        }
+        if (sinEquipo) {
+          base.projectHasEquipment = false;
+          base.sector = sectorPre;
+        } else if (involEquipo) {
+          base.projectHasEquipment = true;
+          base.nombreEquipo = involEquipo;
+        }
+      }
+      setOrden(base);
     }
   }, [id, loaded, ordenes]); // eslint-disable-line
 
