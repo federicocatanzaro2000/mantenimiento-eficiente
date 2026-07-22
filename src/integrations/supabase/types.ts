@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_involucrados: {
+        Row: {
+          activo: boolean
+          codigo: string | null
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string | null
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       document_codes: {
         Row: {
           active: boolean
@@ -103,6 +136,7 @@ export type Database = {
           preventivo_schedule_id: string | null
           prioridad: string | null
           project_has_equipment: boolean | null
+          relevamiento_id: string | null
           responsable_control_calidad: string | null
           reviso: string | null
           sector: string | null
@@ -146,6 +180,7 @@ export type Database = {
           preventivo_schedule_id?: string | null
           prioridad?: string | null
           project_has_equipment?: boolean | null
+          relevamiento_id?: string | null
           responsable_control_calidad?: string | null
           reviso?: string | null
           sector?: string | null
@@ -189,6 +224,7 @@ export type Database = {
           preventivo_schedule_id?: string | null
           prioridad?: string | null
           project_has_equipment?: boolean | null
+          relevamiento_id?: string | null
           responsable_control_calidad?: string | null
           reviso?: string | null
           sector?: string | null
@@ -207,6 +243,13 @@ export type Database = {
             columns: ["preventivo_schedule_id"]
             isOneToOne: false
             referencedRelation: "preventivos_schedule"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_relevamiento_id_fkey"
+            columns: ["relevamiento_id"]
+            isOneToOne: false
+            referencedRelation: "relevamientos"
             referencedColumns: ["id"]
           },
         ]
@@ -673,6 +716,131 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      relevamiento_adjuntos: {
+        Row: {
+          active: boolean
+          id: string
+          mime_type: string
+          original_file_name: string
+          relevamiento_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          mime_type: string
+          original_file_name: string
+          relevamiento_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          mime_type?: string
+          original_file_name?: string
+          relevamiento_id?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relevamiento_adjuntos_relevamiento_id_fkey"
+            columns: ["relevamiento_id"]
+            isOneToOne: false
+            referencedRelation: "relevamientos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relevamientos: {
+        Row: {
+          convertido_at: string | null
+          convertido_por: string | null
+          created_at: string
+          created_by: string
+          descripcion: string
+          estado: string
+          id: string
+          involucrado_id: string | null
+          involucrado_nombre: string
+          involucrado_tipo: string
+          motivo_rechazo: string | null
+          numero: string
+          oit_id: string | null
+          prioridad: string
+          rechazado_at: string | null
+          rechazado_por: string | null
+          solicitante: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          convertido_at?: string | null
+          convertido_por?: string | null
+          created_at?: string
+          created_by: string
+          descripcion: string
+          estado?: string
+          id?: string
+          involucrado_id?: string | null
+          involucrado_nombre: string
+          involucrado_tipo: string
+          motivo_rechazo?: string | null
+          numero: string
+          oit_id?: string | null
+          prioridad: string
+          rechazado_at?: string | null
+          rechazado_por?: string | null
+          solicitante: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          convertido_at?: string | null
+          convertido_por?: string | null
+          created_at?: string
+          created_by?: string
+          descripcion?: string
+          estado?: string
+          id?: string
+          involucrado_id?: string | null
+          involucrado_nombre?: string
+          involucrado_tipo?: string
+          motivo_rechazo?: string | null
+          numero?: string
+          oit_id?: string | null
+          prioridad?: string
+          rechazado_at?: string | null
+          rechazado_por?: string | null
+          solicitante?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relevamientos_involucrado_id_fkey"
+            columns: ["involucrado_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_involucrados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relevamientos_oit_id_fkey"
+            columns: ["oit_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sectors: {
         Row: {
