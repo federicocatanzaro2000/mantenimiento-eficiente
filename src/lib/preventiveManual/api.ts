@@ -22,13 +22,27 @@ export async function listPreventives(f: PreventiveFilters = {}): Promise<Preven
   if (f.equipmentCode) q = q.ilike("equipment_code_snapshot", f.equipmentCode);
   if (f.equipmentName) q = q.ilike("equipment_name_snapshot", `%${f.equipmentName}%`);
   if (f.type) q = q.eq("preventive_type", f.type);
-  if (f.status && f.status !== "Vencido") q = q.eq("status", f.status as PreventiveStatus);
+  if (f.status && f.status !== "Vencido" && f.status !== "Próximo") q = q.eq("status", f.status as PreventiveStatus);
   if (f.withOIT === "with") q = q.not("work_order_id", "is", null);
   if (f.withOIT === "without") q = q.is("work_order_id", null);
   if (f.search) q = q.ilike("task_name", `%${f.search}%`);
   const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as PreventiveItem[];
+  const rows = (data ?? []) as PreventiveItem[];
+
+  // Enriquecer con el estado real de la OIT asociada. Sin este join, un preventivo
+  // "Con OIT" nunca podría mostrarse como "Cumplido" ni "En proceso".
+  const oitIds = Array.from(new Set(rows.map((r) => r.work_order_id).filter((v): v is string => !!v)));
+  if (oitIds.length > 0) {
+    const { data: ords } = await supabase.from("ordenes").select("id,estado").in("id", oitIds);
+    const estadoById = new Map<string, string>();
+    (ords ?? []).forEach((o: any) => estadoById.set(o.id, o.estado ?? ""));
+    for (const r of rows) {
+      if (r.work_order_id) r.work_order_estado = estadoById.get(r.work_order_id) ?? null;
+    }
+  }
+
+  return rows;
 }
 
 export async function distinctYears(): Promise<number[]> {
