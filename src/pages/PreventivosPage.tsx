@@ -11,7 +11,7 @@ import { SearchSelect } from "@/components/SearchSelect";
 import { useAuth } from "@/hooks/useAuth";
 import { canManagePreventivos } from "@/lib/permissions";
 import { Equipment, listEquipment } from "@/lib/catalogos/api";
-import { PreventiveItem, PREVENTIVE_TYPES, PREVENTIVE_STATUSES, effectiveStatus, MONTH_NAMES } from "@/lib/preventiveManual/types";
+import { PreventiveItem, PREVENTIVE_TYPES, PREVENTIVE_STATUSES, effectiveStatus, MONTH_NAMES, todayISOArgentina, daysBetweenISO } from "@/lib/preventiveManual/types";
 import { listPreventives, distinctYears, softDeletePreventive, markRealizado, cancelar, createOITFromPreventivo, topUpSeriesHorizon, cancelSeriesFuture } from "@/lib/preventiveManual/api";
 import { exportYearToExcel } from "@/lib/preventiveManual/excelExport";
 import { PreventivoFormDialog } from "@/components/preventivos/PreventivoFormDialog";
@@ -28,9 +28,9 @@ export default function PreventivosPage() {
   const canManage = canManagePreventivos(roles);
   const navigate = useNavigate();
 
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
+  const todayISO = todayISOArgentina();
+  const currentYear = Number(todayISO.slice(0, 4));
+  const currentMonth = Number(todayISO.slice(5, 7));
 
   const [year, setYear] = useState<number>(currentYear);
   const [calMonth, setCalMonth] = useState<number>(currentMonth);
@@ -106,14 +106,13 @@ export default function PreventivosPage() {
   const indicators = useMemo(() => {
     const total = filtered.length;
     let vencidos = 0, prox7 = 0, prox30 = 0, conOIT = 0, sinOIT = 0, realizados = 0;
-    const t = new Date(todayISO);
     for (const it of filtered) {
       const st = effectiveStatus(it, todayISO);
       if (st === "Vencido") vencidos++;
       if (st === "Realizado") realizados++;
       if (it.work_order_id) conOIT++; else sinOIT++;
-      const d = new Date(it.scheduled_date);
-      const diff = Math.round((+d - +t) / 86400000);
+      if (st === "Realizado" || st === "Cancelado" || st === "Vencido") continue;
+      const diff = daysBetweenISO(it.scheduled_date, todayISO);
       if (diff >= 0 && diff <= 7) prox7++;
       if (diff >= 0 && diff <= 30) prox30++;
     }
@@ -211,7 +210,7 @@ export default function PreventivosPage() {
                 <SelectTrigger className="h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {["Programado", "Vencido", ...PREVENTIVE_STATUSES.filter((s) => s !== "Programado")].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {["Programado", "Próximo", "Vencido", ...PREVENTIVE_STATUSES.filter((s) => s !== "Programado")].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

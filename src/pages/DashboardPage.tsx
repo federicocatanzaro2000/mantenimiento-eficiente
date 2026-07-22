@@ -21,7 +21,16 @@ import {
 import { toast } from "sonner";
 
 // ───────────────────────────────── helpers ─────────────────────────────────
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === "year")?.value ?? "1970";
+  const m = parts.find((p) => p.type === "month")?.value ?? "01";
+  const d = parts.find((p) => p.type === "day")?.value ?? "01";
+  return `${y}-${m}-${d}`;
+};
 const isoOffset = (days: number) => {
   const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10);
 };
