@@ -210,7 +210,7 @@ export default function PreventivosPage() {
                 <SelectTrigger className="h-9"><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {["Programado", "Vencido", ...PREVENTIVE_STATUSES.filter((s) => s !== "Programado")].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {["Programado", "Próximo", "Vencido", ...PREVENTIVE_STATUSES.filter((s) => s !== "Programado")].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
