@@ -232,8 +232,22 @@ export default function OrdenForm() {
         await updateOrden(orden.id, orden);
         toast.success("Orden actualizada");
       } else {
-        await addOrden(orden);
+        const saved = await addOrden(orden);
         toast.success("Orden creada");
+        // Vincular con relevamiento si corresponde
+        if (relevamientoId && saved?.id) {
+          try {
+            const { supabase } = await import("@/integrations/supabase/client");
+            await (supabase as any).from("ordenes").update({ relevamiento_id: relevamientoId }).eq("id", saved.id);
+            const { marcarConvertido } = await import("@/lib/relevamientos/api");
+            await marcarConvertido(relevamientoId, saved.id);
+            toast.success(`Relevamiento vinculado a la OIT #${saved.nroOrden}.`);
+            navigate(`/relevamientos/${relevamientoId}`);
+            return;
+          } catch (e: any) {
+            toast.error("La OIT se creó pero no se pudo vincular con el relevamiento: " + (e.message || ""));
+          }
+        }
       }
       if (volver) navigate("/");
     } catch (e: any) {
