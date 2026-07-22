@@ -39,6 +39,8 @@ export interface PreventiveItem {
   repeat_end_date: string | null;
   repeat_count: number | null;
   materiales_previstos?: any;
+  /** Estado de la OIT asociada (si existe), enriquecido por listPreventives. */
+  work_order_estado?: string | null;
 }
 
 export interface PreventiveMaterial {
@@ -83,6 +85,7 @@ export const STATUS_COLORS: Record<string, string> = {
   Programado: "bg-slate-200 text-slate-800 border-slate-300",
   Próximo: "bg-amber-200 text-amber-900 border-amber-400",
   Vencido: "bg-red-100 text-red-800 border-red-300",
+  "En proceso": "bg-indigo-100 text-indigo-800 border-indigo-300",
   "Con OIT": "bg-amber-100 text-amber-800 border-amber-300",
   Realizado: "bg-emerald-100 text-emerald-800 border-emerald-300",
   Cancelado: "bg-zinc-100 text-zinc-600 border-zinc-300",
@@ -114,24 +117,45 @@ export function daysBetweenISO(dateISO: string, refISO: string): number {
   return Math.round((a - b) / 86400000);
 }
 
+/** Estados de OIT considerados "cumplido/cerrado". */
+const OIT_ESTADOS_CUMPLIDOS = new Set(["Cumplido", "Completado", "Finalizada", "Finalizado"]);
+/** Estados de OIT considerados "en curso". */
+const OIT_ESTADOS_EN_PROCESO = new Set(["En proceso", "En Proceso", "En ejecución"]);
+
 /**
- * Estado visual único y centralizado de un preventivo. Prioridad:
- *   1. Realizado / Cancelado (finalizado)
- *   2. Con OIT (ya tiene orden generada)
- *   3. Vencido (fecha programada anterior a hoy)
- *   4. Próximo (faltan entre 0 y 7 días inclusive)
- *   5. Programado (vigente, faltan más de 7 días)
+ * Estado visual único y centralizado de un preventivo. Regla de prioridad
+ * (definida por el negocio):
+ *   1. Cumplido    → si el preventivo o su OIT están cumplidos.
+ *   2. Cancelado   → si el preventivo fue cancelado.
+ *   3. Vencido     → si la fecha programada ya pasó y no está cumplido.
+ *   4. Próximo     → si faltan entre 0 y 7 días.
+ *   5. En proceso  → si la OIT asociada está en ejecución.
+ *   6. Con OIT     → si existe OIT asociada pendiente.
+ *   7. Programado  → resto (vigente, faltan más de 7 días y sin OIT).
+ *
+ * El preventivo NUNCA se oculta por tener OIT: siempre devuelve un estado.
  */
 export function effectiveStatus(
-  it: { status: PreventiveStatus; scheduled_date: string; work_order_id: string | null },
+  it: { status: PreventiveStatus; scheduled_date: string; work_order_id: string | null; work_order_estado?: string | null },
   todayISO: string,
 ): string {
-  if (it.status === "Realizado" || it.status === "Cancelado") return it.status;
+  const oitEstado = it.work_order_estado ?? null;
+  // 1) Cumplido (preventivo marcado como Realizado o su OIT cumplida)
+  if (it.status === "Realizado" || (oitEstado && OIT_ESTADOS_CUMPLIDOS.has(oitEstado))) return "Realizado";
+  // 2) Cancelado
+  if (it.status === "Cancelado") return "Cancelado";
+  // 3) Vencido — fecha pasada y no cumplido
+  if (it.scheduled_date) {
+    const diff = daysBetweenISO(it.scheduled_date, todayISO);
+    if (diff < 0) return "Vencido";
+    // 4) Próximo (0..7 días)
+    if (diff <= 7) return "Próximo";
+  }
+  // 5) En proceso
+  if (oitEstado && OIT_ESTADOS_EN_PROCESO.has(oitEstado)) return "En proceso";
+  // 6) Con OIT pendiente
   if (it.status === "Con OIT" || it.work_order_id) return "Con OIT";
-  if (!it.scheduled_date) return "Programado";
-  const diff = daysBetweenISO(it.scheduled_date, todayISO);
-  if (diff < 0) return "Vencido";
-  if (diff <= 7) return "Próximo";
+  // 7) Programado
   return "Programado";
 }
 
