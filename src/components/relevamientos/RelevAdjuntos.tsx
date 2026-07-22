@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  RelevAdjunto, listRelevAdjuntos, uploadRelevAdjunto, deleteRelevAdjunto,
+  listRelevAdjuntos, uploadRelevAdjunto, deleteRelevAdjunto,
   getRelevAdjuntoUrl, validateRelevFile, MAX_RELEV_FILES,
 } from "@/lib/relevamientos/api";
+import type { RelevAdjunto } from "@/lib/relevamientos/types";
 import { Button } from "@/components/ui/button";
 import { Upload, Trash2, Download, Eye, FileText, Image as ImageIcon, Video, Loader2, Paperclip } from "lucide-react";
 import { toast } from "sonner";
