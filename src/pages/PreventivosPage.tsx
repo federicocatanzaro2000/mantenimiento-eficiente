@@ -11,7 +11,7 @@ import { SearchSelect } from "@/components/SearchSelect";
 import { useAuth } from "@/hooks/useAuth";
 import { canManagePreventivos } from "@/lib/permissions";
 import { Equipment, listEquipment } from "@/lib/catalogos/api";
-import { PreventiveItem, PREVENTIVE_TYPES, PREVENTIVE_STATUSES, effectiveStatus, MONTH_NAMES } from "@/lib/preventiveManual/types";
+import { PreventiveItem, PREVENTIVE_TYPES, PREVENTIVE_STATUSES, effectiveStatus, MONTH_NAMES, todayISOArgentina, daysBetweenISO } from "@/lib/preventiveManual/types";
 import { listPreventives, distinctYears, softDeletePreventive, markRealizado, cancelar, createOITFromPreventivo, topUpSeriesHorizon, cancelSeriesFuture } from "@/lib/preventiveManual/api";
 import { exportYearToExcel } from "@/lib/preventiveManual/excelExport";
 import { PreventivoFormDialog } from "@/components/preventivos/PreventivoFormDialog";
