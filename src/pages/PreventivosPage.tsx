@@ -28,9 +28,9 @@ export default function PreventivosPage() {
   const canManage = canManagePreventivos(roles);
   const navigate = useNavigate();
 
-  const todayISO = new Date().toISOString().slice(0, 10);
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
+  const todayISO = todayISOArgentina();
+  const currentYear = Number(todayISO.slice(0, 4));
+  const currentMonth = Number(todayISO.slice(5, 7));
 
   const [year, setYear] = useState<number>(currentYear);
   const [calMonth, setCalMonth] = useState<number>(currentMonth);
