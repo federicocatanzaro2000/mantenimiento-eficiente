@@ -39,6 +39,8 @@ export interface PreventiveItem {
   repeat_end_date: string | null;
   repeat_count: number | null;
   materiales_previstos?: any;
+  /** Estado de la OIT asociada (si existe), enriquecido por listPreventives. */
+  work_order_estado?: string | null;
 }
 
 export interface PreventiveMaterial {
