@@ -154,6 +154,29 @@ export default function OrdenForm() {
     }
   }, [id, loaded, ordenes]); // eslint-disable-line
 
+  // Detectar si esta OIT fue generada desde un mantenimiento preventivo.
+  // En ese caso, forzamos tipo_orden="Preventivo" y bloqueamos el campo.
+  useEffect(() => {
+    if (!isEdit || !orden?.id) { setFromPreventivo(false); return; }
+    let cancel = false;
+    (async () => {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await (supabase as any)
+        .from("preventive_manual_items")
+        .select("id")
+        .eq("work_order_id", orden.id)
+        .limit(1);
+      if (cancel) return;
+      const linked = Array.isArray(data) && data.length > 0;
+      setFromPreventivo(linked);
+      if (linked && orden.tipoOrden !== "Preventivo") {
+        setOrden((o) => o ? ({ ...o, tipoOrden: "Preventivo" }) : o);
+      }
+    })();
+    return () => { cancel = true; };
+  }, [isEdit, orden?.id]); // eslint-disable-line
+
+
   if (!orden) {
     return <AppLayout><div className="text-center py-10 text-muted-foreground">Cargando...</div></AppLayout>;
   }
