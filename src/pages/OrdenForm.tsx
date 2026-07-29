@@ -252,11 +252,14 @@ export default function OrdenForm() {
     if (err) { toast.error(err); return; }
     setSaving(true);
     try {
+      // Regla obligatoria: si la OIT proviene de un preventivo, forzar tipo "Preventivo"
+      // aunque el estado del formulario haya sido manipulado.
+      const toSave: Orden = fromPreventivo ? { ...orden, tipoOrden: "Preventivo" } : orden;
       if (isEdit) {
-        await updateOrden(orden.id, orden);
+        await updateOrden(toSave.id, toSave);
         toast.success("Orden actualizada");
       } else {
-        const saved = await addOrden(orden);
+        const saved = await addOrden(toSave);
         toast.success("Orden creada");
         // Vincular con relevamiento si corresponde
         if (relevamientoId && saved?.id) {
