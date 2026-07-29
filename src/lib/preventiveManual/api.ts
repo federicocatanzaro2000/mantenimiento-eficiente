@@ -157,7 +157,7 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
     nro_orden: nro,
     fecha_creacion: today,
     fecha_limite_realizacion: item.scheduled_date,
-    tipo_orden: "Preventivo",
+    tipo_orden: item.preventive_type || "Preventivo",
     estado: "Pendiente",
     prioridad: "Media",
     nombre_equipo: item.equipment_name_snapshot,
