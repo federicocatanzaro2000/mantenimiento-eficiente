@@ -347,7 +347,7 @@ export default function OrdenForm() {
               allowFreeSnapshot placeholder="Seleccionar sector..." />
           </Field>
           <Field label="Tipo de orden" required>
-            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1}>
+            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1 || fromPreventivo}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {(() => {
@@ -362,6 +362,11 @@ export default function OrdenForm() {
                 })()}
               </SelectContent>
             </Select>
+            {fromPreventivo && (
+              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
+                <Lock className="h-3 w-3" /> OIT generada desde Preventivo — tipo bloqueado.
+              </p>
+            )}
           </Field>
           <Field label="Estado" required>
             <Select value={orden.estado || undefined} onValueChange={(v) => set("estado", v as any)} disabled={!can1}>
