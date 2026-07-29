@@ -152,6 +152,7 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
   const { data: maxRow } = await supabase.from("ordenes").select("nro_orden").order("nro_orden", { ascending: false }).limit(1).maybeSingle();
   const nro = (maxRow?.nro_orden ?? 1000) + 1;
   const today = new Date().toISOString().slice(0, 10);
+  const hasEquipment = !!(item.equipment_code_snapshot || item.equipment_name_snapshot);
   const { data, error } = await supabase.from("ordenes").insert({
     nro_orden: nro,
     fecha_creacion: today,
@@ -161,6 +162,8 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
     prioridad: "Media",
     nombre_equipo: item.equipment_name_snapshot,
     codigo_equipo: item.equipment_code_snapshot,
+    project_has_equipment: hasEquipment,
+    horas_presupuestadas: item.estimated_hours ?? null,
     trabajo_solicitado: item.task_name,
     descripcion_problema: `Preventivo: ${item.task_name}${item.frequency_label ? ` (${item.frequency_label})` : ""}`,
     observaciones: item.notes ?? "",
