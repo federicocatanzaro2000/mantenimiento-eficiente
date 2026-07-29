@@ -110,7 +110,6 @@ export default function OrdenForm() {
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
   const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [fromPreventivo, setFromPreventivo] = useState(false);
   const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
@@ -153,29 +152,6 @@ export default function OrdenForm() {
       setOrden(base);
     }
   }, [id, loaded, ordenes]); // eslint-disable-line
-
-  // Detectar si esta OIT fue generada desde un mantenimiento preventivo.
-  // En ese caso, forzamos tipo_orden="Preventivo" y bloqueamos el campo.
-  useEffect(() => {
-    if (!isEdit || !orden?.id) { setFromPreventivo(false); return; }
-    let cancel = false;
-    (async () => {
-      const { supabase } = await import("@/integrations/supabase/client");
-      const { data } = await (supabase as any)
-        .from("preventive_manual_items")
-        .select("id")
-        .eq("work_order_id", orden.id)
-        .limit(1);
-      if (cancel) return;
-      const linked = Array.isArray(data) && data.length > 0;
-      setFromPreventivo(linked);
-      if (linked && orden.tipoOrden !== "Preventivo") {
-        setOrden((o) => o ? ({ ...o, tipoOrden: "Preventivo" }) : o);
-      }
-    })();
-    return () => { cancel = true; };
-  }, [isEdit, orden?.id]); // eslint-disable-line
-
 
   if (!orden) {
     return <AppLayout><div className="text-center py-10 text-muted-foreground">Cargando...</div></AppLayout>;
@@ -252,14 +228,11 @@ export default function OrdenForm() {
     if (err) { toast.error(err); return; }
     setSaving(true);
     try {
-      // Regla obligatoria: si la OIT proviene de un preventivo, forzar tipo "Preventivo"
-      // aunque el estado del formulario haya sido manipulado.
-      const toSave: Orden = fromPreventivo ? { ...orden, tipoOrden: "Preventivo" } : orden;
       if (isEdit) {
-        await updateOrden(toSave.id, toSave);
+        await updateOrden(orden.id, orden);
         toast.success("Orden actualizada");
       } else {
-        const saved = await addOrden(toSave);
+        const saved = await addOrden(orden);
         toast.success("Orden creada");
         // Vincular con relevamiento si corresponde
         if (relevamientoId && saved?.id) {
@@ -350,7 +323,7 @@ export default function OrdenForm() {
               allowFreeSnapshot placeholder="Seleccionar sector..." />
           </Field>
           <Field label="Tipo de orden" required>
-            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1 || fromPreventivo}>
+            <Select value={orden.tipoOrden || undefined} onValueChange={setTipoOrden} disabled={!can1}>
               <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
               <SelectContent>
                 {(() => {
@@ -365,11 +338,6 @@ export default function OrdenForm() {
                 })()}
               </SelectContent>
             </Select>
-            {fromPreventivo && (
-              <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1">
-                <Lock className="h-3 w-3" /> OIT generada desde Preventivo — tipo bloqueado.
-              </p>
-            )}
           </Field>
           <Field label="Estado" required>
             <Select value={orden.estado || undefined} onValueChange={(v) => set("estado", v as any)} disabled={!can1}>
