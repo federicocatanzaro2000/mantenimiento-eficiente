@@ -110,6 +110,7 @@ export default function OrdenForm() {
   const [orderTypes, setOrderTypes] = useState<OrderType[]>([]);
   const [documentCodes, setDocumentCodes] = useState<DocumentCode[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [fromPreventivo, setFromPreventivo] = useState(false);
   const refreshAttachmentCounts = useStoreForCounts((s) => s.refreshAttachmentCounts);
 
   useEffect(() => {
