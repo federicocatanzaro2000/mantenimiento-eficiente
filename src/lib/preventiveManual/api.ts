@@ -157,7 +157,9 @@ export async function createOITFromPreventivo(item: PreventiveItem): Promise<str
     nro_orden: nro,
     fecha_creacion: today,
     fecha_limite_realizacion: item.scheduled_date,
-    tipo_orden: item.preventive_type || "Preventivo",
+    // Siempre PREVENTIVO cuando la OIT se genera desde el módulo de preventivos.
+    // El "Tipo de preventivo" (item.preventive_type) NO se usa acá.
+    tipo_orden: "PREVENTIVO",
     estado: "Pendiente",
     prioridad: "Media",
     nombre_equipo: item.equipment_name_snapshot,
