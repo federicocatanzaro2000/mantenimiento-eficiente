@@ -40,6 +40,8 @@ const mkMat = (): PreventiveMaterial => ({
   descripcion: "",
   cantidad: "",
   unidad: "",
+  lote: "",
+  fechaVencimiento: "",
   observaciones: "",
 });
 
@@ -133,6 +135,8 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         descripcion: m.descripcion ?? "",
         cantidad: m.cantidad ?? "",
         unidad: m.unidad ?? "",
+        lote: m.lote ?? "",
+        fechaVencimiento: m.fechaVencimiento ?? "",
         observaciones: m.observaciones ?? "",
       })));
 
@@ -186,6 +190,8 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         descripcion: (m.descripcion ?? "").trim(),
         cantidad: m.cantidad === "" || m.cantidad === null || m.cantidad === undefined ? "" : Number(m.cantidad),
         unidad: (m.unidad ?? "").trim(),
+        lote: (m.lote ?? "").trim(),
+        fechaVencimiento: m.fechaVencimiento ?? "",
         observaciones: (m.observaciones ?? "").trim(),
       }))
       .filter((m) => m.codigo || m.descripcion || (m.cantidad !== "" && !Number.isNaN(Number(m.cantidad))));
@@ -463,21 +469,23 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
               Se copiarán automáticamente a la OIT al generarla como "Materiales previstos".
             </p>
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-xs border rounded">
+              <table className="w-full min-w-[900px] text-xs border rounded">
                 <thead className="bg-muted/50">
                   <tr className="text-left">
                     <th className="p-2 w-28">Código</th>
                     <th className="p-2">Descripción</th>
                     <th className="p-2 w-24">Cantidad</th>
                     <th className="p-2 w-28">Unidad</th>
+                    <th className="p-2 w-32">Lote</th>
+                    <th className="p-2 w-40">Fecha de vencimiento</th>
                     <th className="p-2">Observaciones</th>
-                    <th className="p-2 w-10"></th>
+                    <th className="p-2 w-10">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
                   {materials.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                      <td colSpan={8} className="p-3 text-center text-muted-foreground">
                         Sin materiales cargados
                       </td>
                     </tr>
@@ -499,8 +507,15 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
                           onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, unidad: e.target.value } : x))} />
                       </td>
                       <td className="p-1">
+                        <Input className="h-8" value={m.lote ?? ""} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, lote: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
+                        <Input className="h-8" type="date" value={m.fechaVencimiento ?? ""} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, fechaVencimiento: e.target.value } : x))} />
+                      </td>
+                      <td className="p-1">
                         <Input className="h-8" value={m.observaciones ?? ""} onChange={(e) => setMaterials((ms) => ms.map((x, ix) => ix === i ? { ...x, observaciones: e.target.value } : x))} />
                       </td>
+
                       <td className="p-1">
                         <Button type="button" size="icon" variant="ghost" onClick={() => setMaterials((ms) => ms.filter((_, ix) => ix !== i))}>
                           <Trash2 className="h-4 w-4 text-destructive" />

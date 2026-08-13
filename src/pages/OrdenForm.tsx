@@ -174,7 +174,7 @@ export default function OrdenForm() {
 
   const set = <K extends keyof Orden>(k: K, v: Orden[K]) => setOrden((o) => o ? ({ ...o, [k]: v }) : o);
 
-  const addMat = () => set("materialesUtilizados", [...orden.materialesUtilizados, { id: uid(), cantidad: "", descripcion: "", codigo: "" }]);
+  const addMat = () => set("materialesUtilizados", [...orden.materialesUtilizados, { id: uid(), cantidad: "", descripcion: "", codigo: "", lote: "", fechaVencimiento: "" }]);
   const updMat = (i: number, patch: Partial<Material>) =>
     set("materialesUtilizados", orden.materialesUtilizados.map((m, idx) => idx === i ? { ...m, ...patch } : m));
   const delMat = (i: number) => set("materialesUtilizados", orden.materialesUtilizados.filter((_, idx) => idx !== i));
@@ -577,6 +577,8 @@ export default function OrdenForm() {
                     <th>Descripción</th>
                     <th className="w-24">Cantidad</th>
                     <th className="w-24">Unidad</th>
+                    <th className="w-32">Lote</th>
+                    <th className="w-36">Fecha de vencimiento</th>
                     <th>Observaciones</th>
                   </tr>
                 </thead>
@@ -587,6 +589,8 @@ export default function OrdenForm() {
                       <td>{m.descripcion || "-"}</td>
                       <td>{m.cantidad === "" || m.cantidad == null ? "-" : m.cantidad}</td>
                       <td>{m.unidad || "-"}</td>
+                      <td>{m.lote || "-"}</td>
+                      <td>{m.fechaVencimiento ? m.fechaVencimiento.split("-").reverse().join("/") : "-"}</td>
                       <td>{m.observaciones || "-"}</td>
                     </tr>
                   ))}
@@ -608,11 +612,11 @@ export default function OrdenForm() {
           <fieldset disabled={!can5} className={`overflow-x-auto ${!can5 ? "opacity-75" : ""}`}>
             <table className="erp-table">
               <thead>
-                <tr><th className="w-32">Cantidad</th><th>Descripción</th><th className="w-48">Código</th><th className="w-20">Acción</th></tr>
+                <tr><th className="w-32">Cantidad</th><th>Descripción</th><th className="w-48">Código</th><th className="w-40">Lote</th><th className="w-44">Fecha de vencimiento</th><th className="w-20">Acción</th></tr>
               </thead>
               <tbody>
                 {orden.materialesUtilizados.length === 0 && (
-                  <tr><td colSpan={4} className="text-center py-6 text-muted-foreground text-sm">Sin materiales cargados</td></tr>
+                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground text-sm">Sin materiales cargados</td></tr>
                 )}
                 {orden.materialesUtilizados.map((m, i) => (
                   <tr key={m.id}>
@@ -620,6 +624,8 @@ export default function OrdenForm() {
                       onChange={(e) => updMat(i, { cantidad: e.target.value === "" ? "" : Number(e.target.value) })} /></td>
                     <td><Input value={m.descripcion} onChange={(e) => updMat(i, { descripcion: e.target.value })} /></td>
                     <td><Input value={m.codigo} onChange={(e) => updMat(i, { codigo: e.target.value })} /></td>
+                    <td><Input value={m.lote ?? ""} onChange={(e) => updMat(i, { lote: e.target.value })} /></td>
+                    <td><Input type="date" value={m.fechaVencimiento ?? ""} onChange={(e) => updMat(i, { fechaVencimiento: e.target.value })} /></td>
                     <td><Button size="icon" variant="ghost" onClick={() => delMat(i)} disabled={!can5}><Trash2 className="h-4 w-4 text-destructive" /></Button></td>
                   </tr>
                 ))}
@@ -627,6 +633,7 @@ export default function OrdenForm() {
             </table>
           </fieldset>
         </div>
+
 
         <Section title="6. Calidad y aprobaciones" seccion={6} canEdit={can6}>
           <Field label="Control / Liberación de Calidad">
