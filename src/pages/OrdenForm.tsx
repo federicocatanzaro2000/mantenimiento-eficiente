@@ -407,13 +407,23 @@ export default function OrdenForm() {
                   <Input
                     type="text"
                     inputMode="decimal"
-                    value={orden.lineStoppedHours}
+                    value={lineHoursText ?? (orden.lineStoppedHours === "" || orden.lineStoppedHours === null ? "" : String(orden.lineStoppedHours))}
                     onChange={(e) => {
-                      const raw = e.target.value.replace(",", ".");
-                      if (raw === "") { set("lineStoppedHours", ""); return; }
-                      if (!/^\d*\.?\d*$/.test(raw)) return;
-                      const n = Number(raw);
-                      set("lineStoppedHours", isNaN(n) ? "" : n);
+                      const txt = e.target.value;
+                      // Solo dígitos y un único separador decimal (, o .)
+                      if (!/^\d*([.,]\d*)?$/.test(txt)) return;
+                      setLineHoursText(txt);
+                      const norm = txt.replace(",", ".");
+                      if (norm === "" || norm === "." ) { set("lineStoppedHours", ""); return; }
+                      const n = Number(norm);
+                      set("lineStoppedHours", Number.isFinite(n) ? n : "");
+                    }}
+                    onBlur={() => {
+                      const txt = (lineHoursText ?? "").replace(",", ".");
+                      setLineHoursText(null);
+                      if (txt === "" || txt === ".") { set("lineStoppedHours", ""); return; }
+                      const n = Number(txt);
+                      set("lineStoppedHours", Number.isFinite(n) ? n : "");
                     }}
                   />
                 </Field>
