@@ -290,30 +290,6 @@ export default function DashboardPage() {
   }, [ordenesTopEquipos]);
 
 
-  // carga por técnico
-  const cargaTecnico = useMemo(() => {
-    const m = new Map<string, { tecnico: string; total: number; abiertas: number; vencidas: number; cumplidas: number; enTermino: number; hPres: number; hReal: number }>();
-    filtered.forEach((o) => {
-      const techs = (o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
-        ? o.tecnicosResponsables
-        : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
-      const keys = techs.length > 0 ? techs : ["Sin asignar"];
-      keys.forEach((k) => {
-        const cur = m.get(k) || { tecnico: k, total: 0, abiertas: 0, vencidas: 0, cumplidas: 0, enTermino: 0, hPres: 0, hReal: 0 };
-        cur.total += 1;
-        if (isOpen(o)) cur.abiertas += 1;
-        if (isOverdue(o)) cur.vencidas += 1;
-        if (isClosed(o)) {
-          cur.cumplidas += 1;
-          if (o.fechaFinalizacion && o.fechaLimiteRealizacion && o.fechaFinalizacion <= o.fechaLimiteRealizacion) cur.enTermino += 1;
-        }
-        cur.hPres += Number(o.horasPresupuestadas) || 0;
-        cur.hReal += Number(o.horasReales) || 0;
-        m.set(k, cur);
-      });
-    });
-    return Array.from(m.values()).sort((a, b) => b.abiertas - a.abiertas);
-  }, [filtered]);
 
   // alertas tabla
   const alertasOrdenes = useMemo(() => {
@@ -813,44 +789,6 @@ export default function DashboardPage() {
           </div>
         </Section>
 
-        {/* carga por técnico */}
-        <Section title="Carga por técnico responsable">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary">
-                <tr>{["Técnico", "Total", "Abiertas", "Vencidas", "Cumplidas", "% en término", "Hs. Pres", "Hs. Real", "Desvío", ""].map((h) =>
-                  <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
-              </thead>
-              <tbody>
-                {cargaTecnico.length === 0 && <tr><td colSpan={10} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
-                {cargaTecnico.map((t) => {
-                  const desv = t.hReal - t.hPres;
-                  return (
-                    <tr key={t.tecnico} className="border-t border-border hover:bg-accent/30">
-                      <td className="p-2 font-medium">{t.tecnico}</td>
-                      <td className="p-2">{t.total}</td>
-                      <td className="p-2 text-[hsl(var(--info))]">{t.abiertas}</td>
-                      <td className={`p-2 ${t.vencidas > 0 ? "text-destructive font-medium" : ""}`}>{t.vencidas}</td>
-                      <td className="p-2 text-[hsl(var(--success))]">{t.cumplidas}</td>
-                      <td className="p-2">{t.cumplidas ? Math.round((t.enTermino / t.cumplidas) * 100) : 0}%</td>
-                      <td className="p-2 tabular-nums">{fmtN(t.hPres)}</td>
-                      <td className="p-2 tabular-nums">{fmtN(t.hReal)}</td>
-                      <td className={`p-2 tabular-nums ${desv > 0 ? "text-destructive" : desv < 0 ? "text-[hsl(var(--success))]" : ""}`}>
-                        {desv >= 0 ? "+" : ""}{fmtN(desv)}
-                      </td>
-                      <td className="p-2">
-                        <Button size="sm" variant="ghost" className="gap-1"
-                          onClick={() => goResultados({ tecnicoResponsable: t.tecnico === "Sin asignar" ? "" : t.tecnico })}>
-                          Ver <ChevronRight className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Section>
 
         {/* horas pres vs real */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
