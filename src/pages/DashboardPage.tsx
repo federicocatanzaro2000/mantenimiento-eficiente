@@ -130,6 +130,7 @@ export default function DashboardPage() {
   const [prevAvailable, setPrevAvailable] = useState<boolean>(true);
 
   const [g, setG] = useState<GFilters>(emptyG);
+  const [tipoEquipoFilter, setTipoEquipoFilter] = useState<string>("");
   const setF = <K extends keyof GFilters>(k: K, v: GFilters[K]) => setG((p) => ({ ...p, [k]: v }));
 
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
@@ -267,10 +268,15 @@ export default function DashboardPage() {
     return ps.map((p) => ({ prioridad: p, cantidad: filtered.filter((o) => o.prioridad === p).length }));
   }, [filtered]);
 
-  // top equipos
+  // top equipos (con filtro local por tipo de OIT)
+  const ordenesTopEquipos = useMemo<Orden[]>(
+    () => (tipoEquipoFilter ? filtered.filter((o) => o.tipoOrden === tipoEquipoFilter) : filtered),
+    [filtered, tipoEquipoFilter],
+  );
+
   const topEquipos = useMemo(() => {
     const m = new Map<string, { codigo: string; nombre: string; total: number; abiertas: number; vencidas: number; horas: number; ultima: string }>();
-    filtered.forEach((o) => {
+    ordenesTopEquipos.forEach((o) => {
       const k = o.codigoEquipo || o.nombreEquipo || "Sin equipo";
       const cur = m.get(k) || { codigo: o.codigoEquipo || "", nombre: o.nombreEquipo || "Sin equipo", total: 0, abiertas: 0, vencidas: 0, horas: 0, ultima: "" };
       cur.total += 1;
@@ -281,7 +287,8 @@ export default function DashboardPage() {
       m.set(k, cur);
     });
     return Array.from(m.values()).sort((a, b) => b.total - a.total).slice(0, 10);
-  }, [filtered]);
+  }, [ordenesTopEquipos]);
+
 
   // carga por técnico
   const cargaTecnico = useMemo(() => {
@@ -676,7 +683,23 @@ export default function DashboardPage() {
         </div>
 
         {/* equipos críticos */}
-        <Section title="Equipos con mayor intervención (Top 10)" subtitle="Identifica máquinas problemáticas">
+        <Section
+          title="Equipos con mayor intervención (Top 10)"
+          subtitle={`Identifica máquinas problemáticas${tipoEquipoFilter ? ` · Tipo: ${tipoEquipoFilter}` : ""}`}
+          action={
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Label className="text-xs whitespace-nowrap text-muted-foreground">Tipo de OIT</Label>
+              <div className="w-full sm:w-56">
+                <SearchSelect
+                  value={tipoEquipoFilter}
+                  onChange={setTipoEquipoFilter}
+                  options={tiposDinamicos.map((t) => ({ value: t, label: t }))}
+                  placeholder="Todos los tipos"
+                />
+              </div>
+            </div>
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-secondary">
@@ -684,7 +707,7 @@ export default function DashboardPage() {
                   <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
               </thead>
               <tbody>
-                {topEquipos.length === 0 && <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
+                {topEquipos.length === 0 && <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">{tipoEquipoFilter ? "Sin datos para el tipo de OIT seleccionado" : "Sin datos"}</td></tr>}
                 {topEquipos.map((e, i) => (
                   <tr key={i} className="border-t border-border hover:bg-accent/30">
                     <td className="p-2 font-mono">{e.codigo || "—"}</td>
@@ -696,7 +719,11 @@ export default function DashboardPage() {
                     <td className="p-2">{e.ultima || "—"}</td>
                     <td className="p-2">
                       <Button size="sm" variant="ghost" className="gap-1"
-                        onClick={() => goResultados({ codigoEquipo: e.codigo, nombreEquipo: e.codigo ? "" : e.nombre })}>
+                        onClick={() => goResultados({
+                          codigoEquipo: e.codigo,
+                          nombreEquipo: e.codigo ? "" : e.nombre,
+                          ...(tipoEquipoFilter ? { tipoOrden: [tipoEquipoFilter] } : {}),
+                        })}>
                         Ver <ChevronRight className="h-3 w-3" />
                       </Button>
                     </td>
