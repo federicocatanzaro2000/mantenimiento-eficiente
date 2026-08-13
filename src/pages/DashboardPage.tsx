@@ -729,12 +729,6 @@ export default function DashboardPage() {
                     </td>
                   </tr>
                 ))}
-
-                        Ver <ChevronRight className="h-3 w-3" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </div>
