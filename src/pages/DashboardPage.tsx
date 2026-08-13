@@ -329,6 +329,33 @@ export default function DashboardPage() {
       .slice(0, 20);
   }, [filtered]);
 
+  // OITs con parada de línea
+  const oitsLineaParada = useMemo(() => {
+    return filtered
+      .filter((o) => o.lineStopped === true)
+      .sort((a, b) => {
+        const ha = Number(a.lineStoppedHours) || 0;
+        const hb = Number(b.lineStoppedHours) || 0;
+        if (hb !== ha) return hb - ha;
+        const ra = Number(a.horasReales) || 0;
+        const rb = Number(b.horasReales) || 0;
+        return rb - ra;
+      });
+  }, [filtered]);
+
+  const resumenLineaParada = useMemo(() => {
+    return oitsLineaParada.reduce(
+      (acc, o) => {
+        acc.cantidad += 1;
+        acc.horasParada += Number(o.lineStoppedHours) || 0;
+        acc.horasPresupuestadas += Number(o.horasPresupuestadas) || 0;
+        acc.horasReales += Number(o.horasReales) || 0;
+        return acc;
+      },
+      { cantidad: 0, horasParada: 0, horasPresupuestadas: 0, horasReales: 0 },
+    );
+  }, [oitsLineaParada]);
+
   // horas pres vs real por tipo
   const horasPorTipo = useMemo(() => {
     return tiposDinamicos.map((t) => {
@@ -579,6 +606,58 @@ export default function DashboardPage() {
                       <td className="p-2">{[o.codigoEquipo, o.nombreEquipo].filter(Boolean).join(" — ") || "—"}</td>
                       <td className="p-2">{o.tecnicoResponsable || "Sin asignar"}</td>
                       <td className="p-2"><Button size="icon" variant="ghost" onClick={() => navigate(`/orden/${o.id}`)}><Eye className="h-4 w-4" /></Button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        {/* OITs con parada de línea */}
+        <Section title="OITs con parada de línea" subtitle="Impacto operativo de intervenciones que generaron detención de producción">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <Kpi title="OITs con parada" value={fmtN(resumenLineaParada.cantidad)} icon={AlertTriangle} tone={resumenLineaParada.cantidad > 0 ? "danger" : "default"} />
+            <Kpi title="Horas de línea parada" value={fmtN(resumenLineaParada.horasParada)} icon={Clock} tone={resumenLineaParada.horasParada > 0 ? "danger" : "default"} />
+            <Kpi title="Horas presupuestadas" value={fmtN(resumenLineaParada.horasPresupuestadas)} icon={Clock} />
+            <Kpi title="Horas reales" value={fmtN(resumenLineaParada.horasReales)} icon={Clock} />
+          </div>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary sticky top-0">
+                <tr>{["OIT", "Fecha", "Equipo", "Tipo", "Estado", "Prioridad", "Hs. línea parada", "Hs. presupuestadas", "Hs. reales", "Desvío", ""].map((h, i) =>
+                  <th key={i} className="text-left p-2 text-xs font-medium uppercase tracking-wide">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {oitsLineaParada.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="text-center py-6 text-muted-foreground">
+                      Sin OITs con parada de línea para los filtros seleccionados
+                    </td>
+                  </tr>
+                )}
+                {oitsLineaParada.map((o) => {
+                  const desv = (Number(o.horasReales) || 0) - (Number(o.horasPresupuestadas) || 0);
+                  return (
+                    <tr key={o.id} className="border-t border-border hover:bg-accent/30">
+                      <td className="p-2 font-mono font-semibold">{o.nroOrden}</td>
+                      <td className="p-2">{o.fechaCreacion || "—"}</td>
+                      <td className="p-2">{[o.codigoEquipo, o.nombreEquipo].filter(Boolean).join(" — ") || "Sin equipo"}</td>
+                      <td className="p-2">{o.tipoOrden || "—"}</td>
+                      <td className="p-2">{o.estado || "—"}</td>
+                      <td className="p-2">{o.prioridad || "—"}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.lineStoppedHours) || 0)}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.horasPresupuestadas) || 0)}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.horasReales) || 0)}</td>
+                      <td className={`p-2 tabular-nums ${desv > 0 ? "text-destructive" : desv < 0 ? "text-[hsl(var(--success))]" : ""}`}>
+                        {desv >= 0 ? "+" : ""}{fmtN(desv)} h
+                      </td>
+                      <td className="p-2">
+                        <Button size="sm" variant="ghost" className="gap-1" onClick={() => navigate(`/orden/${o.id}`)}>
+                          Ver <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
