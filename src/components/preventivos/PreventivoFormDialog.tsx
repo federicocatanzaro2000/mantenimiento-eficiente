@@ -135,6 +135,8 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         descripcion: m.descripcion ?? "",
         cantidad: m.cantidad ?? "",
         unidad: m.unidad ?? "",
+        lote: m.lote ?? "",
+        fechaVencimiento: m.fechaVencimiento ?? "",
         observaciones: m.observaciones ?? "",
       })));
 
