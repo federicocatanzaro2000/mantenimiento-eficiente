@@ -267,10 +267,15 @@ export default function DashboardPage() {
     return ps.map((p) => ({ prioridad: p, cantidad: filtered.filter((o) => o.prioridad === p).length }));
   }, [filtered]);
 
-  // top equipos
+  // top equipos (con filtro local por tipo de OIT)
+  const ordenesTopEquipos = useMemo<Orden[]>(
+    () => (tipoEquipoFilter ? filtered.filter((o) => o.tipoOrden === tipoEquipoFilter) : filtered),
+    [filtered, tipoEquipoFilter],
+  );
+
   const topEquipos = useMemo(() => {
     const m = new Map<string, { codigo: string; nombre: string; total: number; abiertas: number; vencidas: number; horas: number; ultima: string }>();
-    filtered.forEach((o) => {
+    ordenesTopEquipos.forEach((o) => {
       const k = o.codigoEquipo || o.nombreEquipo || "Sin equipo";
       const cur = m.get(k) || { codigo: o.codigoEquipo || "", nombre: o.nombreEquipo || "Sin equipo", total: 0, abiertas: 0, vencidas: 0, horas: 0, ultima: "" };
       cur.total += 1;
@@ -281,7 +286,8 @@ export default function DashboardPage() {
       m.set(k, cur);
     });
     return Array.from(m.values()).sort((a, b) => b.total - a.total).slice(0, 10);
-  }, [filtered]);
+  }, [ordenesTopEquipos]);
+
 
   // carga por técnico
   const cargaTecnico = useMemo(() => {
