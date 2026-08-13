@@ -104,6 +104,8 @@ export default function OrdenForm() {
   const relevamientoId = !isEdit ? searchParams.get("relevamiento_id") : null;
   const [orden, setOrden] = useState<Orden | null>(null);
   const [saving, setSaving] = useState(false);
+  // Texto en edición para "Horas de línea parada" (permite estados intermedios como "1," o "1.")
+  const [lineHoursText, setLineHoursText] = useState<string | null>(null);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
@@ -385,11 +387,14 @@ export default function OrdenForm() {
                         type="radio"
                         name="line_stopped"
                         checked={orden.lineStopped === val}
-                        onChange={() => setOrden((o) => o ? ({
-                          ...o,
-                          lineStopped: val,
-                          lineStoppedHours: val ? o.lineStoppedHours : "",
-                        }) : o)}
+                        onChange={() => {
+                          if (!val) setLineHoursText(null);
+                          setOrden((o) => o ? ({
+                            ...o,
+                            lineStopped: val,
+                            lineStoppedHours: val ? o.lineStoppedHours : "",
+                          }) : o);
+                        }}
                         disabled={!can2}
                       />
                       {lbl}
@@ -402,13 +407,23 @@ export default function OrdenForm() {
                   <Input
                     type="text"
                     inputMode="decimal"
-                    value={orden.lineStoppedHours}
+                    value={lineHoursText ?? (orden.lineStoppedHours === "" || orden.lineStoppedHours === null ? "" : String(orden.lineStoppedHours))}
                     onChange={(e) => {
-                      const raw = e.target.value.replace(",", ".");
-                      if (raw === "") { set("lineStoppedHours", ""); return; }
-                      if (!/^\d*\.?\d*$/.test(raw)) return;
-                      const n = Number(raw);
-                      set("lineStoppedHours", isNaN(n) ? "" : n);
+                      const txt = e.target.value;
+                      // Solo dígitos y un único separador decimal (, o .)
+                      if (!/^\d*([.,]\d*)?$/.test(txt)) return;
+                      setLineHoursText(txt);
+                      const norm = txt.replace(",", ".");
+                      if (norm === "" || norm === "." ) { set("lineStoppedHours", ""); return; }
+                      const n = Number(norm);
+                      set("lineStoppedHours", Number.isFinite(n) ? n : "");
+                    }}
+                    onBlur={() => {
+                      const txt = (lineHoursText ?? "").replace(",", ".");
+                      setLineHoursText(null);
+                      if (txt === "" || txt === ".") { set("lineStoppedHours", ""); return; }
+                      const n = Number(txt);
+                      set("lineStoppedHours", Number.isFinite(n) ? n : "");
                     }}
                   />
                 </Field>
