@@ -130,6 +130,7 @@ export default function DashboardPage() {
   const [prevAvailable, setPrevAvailable] = useState<boolean>(true);
 
   const [g, setG] = useState<GFilters>(emptyG);
+  const [tipoEquipoFilter, setTipoEquipoFilter] = useState<string>("");
   const setF = <K extends keyof GFilters>(k: K, v: GFilters[K]) => setG((p) => ({ ...p, [k]: v }));
 
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
