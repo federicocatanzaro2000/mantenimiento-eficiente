@@ -614,6 +614,58 @@ export default function DashboardPage() {
           </div>
         </Section>
 
+        {/* OITs con parada de línea */}
+        <Section title="OITs con parada de línea" subtitle="Impacto operativo de intervenciones que generaron detención de producción">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <Kpi title="OITs con parada" value={fmtN(resumenLineaParada.cantidad)} icon={AlertTriangle} tone={resumenLineaParada.cantidad > 0 ? "danger" : "default"} />
+            <Kpi title="Horas de línea parada" value={fmtN(resumenLineaParada.horasParada)} icon={Clock} tone={resumenLineaParada.horasParada > 0 ? "danger" : "default"} />
+            <Kpi title="Horas presupuestadas" value={fmtN(resumenLineaParada.horasPresupuestadas)} icon={Clock} />
+            <Kpi title="Horas reales" value={fmtN(resumenLineaParada.horasReales)} icon={Clock} />
+          </div>
+          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary sticky top-0">
+                <tr>{["OIT", "Fecha", "Equipo", "Tipo", "Estado", "Prioridad", "Hs. línea parada", "Hs. presupuestadas", "Hs. reales", "Desvío", ""].map((h, i) =>
+                  <th key={i} className="text-left p-2 text-xs font-medium uppercase tracking-wide">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {oitsLineaParada.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="text-center py-6 text-muted-foreground">
+                      Sin OITs con parada de línea para los filtros seleccionados
+                    </td>
+                  </tr>
+                )}
+                {oitsLineaParada.map((o) => {
+                  const desv = (Number(o.horasReales) || 0) - (Number(o.horasPresupuestadas) || 0);
+                  return (
+                    <tr key={o.id} className="border-t border-border hover:bg-accent/30">
+                      <td className="p-2 font-mono font-semibold">{o.nroOrden}</td>
+                      <td className="p-2">{o.fechaCreacion || "—"}</td>
+                      <td className="p-2">{[o.codigoEquipo, o.nombreEquipo].filter(Boolean).join(" — ") || "Sin equipo"}</td>
+                      <td className="p-2">{o.tipoOrden || "—"}</td>
+                      <td className="p-2">{o.estado || "—"}</td>
+                      <td className="p-2">{o.prioridad || "—"}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.lineStoppedHours) || 0)}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.horasPresupuestadas) || 0)}</td>
+                      <td className="p-2 tabular-nums">{fmtN(Number(o.horasReales) || 0)}</td>
+                      <td className={`p-2 tabular-nums ${desv > 0 ? "text-destructive" : desv < 0 ? "text-[hsl(var(--success))]" : ""}`}>
+                        {desv >= 0 ? "+" : ""}{fmtN(desv)} h
+                      </td>
+                      <td className="p-2">
+                        <Button size="sm" variant="ghost" className="gap-1" onClick={() => navigate(`/orden/${o.id}`)}>
+                          Ver <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
         {/* estado + tipo + prioridad */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Section title="Estado de órdenes">
