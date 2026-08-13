@@ -329,6 +329,33 @@ export default function DashboardPage() {
       .slice(0, 20);
   }, [filtered]);
 
+  // OITs con parada de línea
+  const oitsLineaParada = useMemo(() => {
+    return filtered
+      .filter((o) => o.lineStopped === true)
+      .sort((a, b) => {
+        const ha = Number(a.lineStoppedHours) || 0;
+        const hb = Number(b.lineStoppedHours) || 0;
+        if (hb !== ha) return hb - ha;
+        const ra = Number(a.horasReales) || 0;
+        const rb = Number(b.horasReales) || 0;
+        return rb - ra;
+      });
+  }, [filtered]);
+
+  const resumenLineaParada = useMemo(() => {
+    return oitsLineaParada.reduce(
+      (acc, o) => {
+        acc.cantidad += 1;
+        acc.horasParada += Number(o.lineStoppedHours) || 0;
+        acc.horasPresupuestadas += Number(o.horasPresupuestadas) || 0;
+        acc.horasReales += Number(o.horasReales) || 0;
+        return acc;
+      },
+      { cantidad: 0, horasParada: 0, horasPresupuestadas: 0, horasReales: 0 },
+    );
+  }, [oitsLineaParada]);
+
   // horas pres vs real por tipo
   const horasPorTipo = useMemo(() => {
     return tiposDinamicos.map((t) => {
