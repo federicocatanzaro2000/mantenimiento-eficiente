@@ -387,11 +387,14 @@ export default function OrdenForm() {
                         type="radio"
                         name="line_stopped"
                         checked={orden.lineStopped === val}
-                        onChange={() => setOrden((o) => o ? ({
-                          ...o,
-                          lineStopped: val,
-                          lineStoppedHours: val ? o.lineStoppedHours : "",
-                        }) : o)}
+                        onChange={() => {
+                          if (!val) setLineHoursText(null);
+                          setOrden((o) => o ? ({
+                            ...o,
+                            lineStopped: val,
+                            lineStoppedHours: val ? o.lineStoppedHours : "",
+                          }) : o);
+                        }}
                         disabled={!can2}
                       />
                       {lbl}
