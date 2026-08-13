@@ -190,6 +190,8 @@ export function PreventivoFormDialog({ open, onOpenChange, item, prefill, onSave
         descripcion: (m.descripcion ?? "").trim(),
         cantidad: m.cantidad === "" || m.cantidad === null || m.cantidad === undefined ? "" : Number(m.cantidad),
         unidad: (m.unidad ?? "").trim(),
+        lote: (m.lote ?? "").trim(),
+        fechaVencimiento: m.fechaVencimiento ?? "",
         observaciones: (m.observaciones ?? "").trim(),
       }))
       .filter((m) => m.codigo || m.descripcion || (m.cantidad !== "" && !Number.isNaN(Number(m.cantidad))));
