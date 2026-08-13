@@ -104,6 +104,8 @@ export default function OrdenForm() {
   const relevamientoId = !isEdit ? searchParams.get("relevamiento_id") : null;
   const [orden, setOrden] = useState<Orden | null>(null);
   const [saving, setSaving] = useState(false);
+  // Texto en edición para "Horas de línea parada" (permite estados intermedios como "1," o "1.")
+  const [lineHoursText, setLineHoursText] = useState<string | null>(null);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
