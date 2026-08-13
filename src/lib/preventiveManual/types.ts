@@ -50,6 +50,8 @@ export interface PreventiveMaterial {
   cantidad: number | "";
   unidad?: string;
   observaciones?: string;
+  lote?: string;
+  fechaVencimiento?: string;
 }
 
 export const MATERIAL_UNITS = ["unidad", "kg", "litros", "metros", "paquetes", "cajas"] as const;

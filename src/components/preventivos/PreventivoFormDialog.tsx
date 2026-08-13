@@ -40,6 +40,8 @@ const mkMat = (): PreventiveMaterial => ({
   descripcion: "",
   cantidad: "",
   unidad: "",
+  lote: "",
+  fechaVencimiento: "",
   observaciones: "",
 });
 

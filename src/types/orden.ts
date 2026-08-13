@@ -10,6 +10,8 @@ export interface Material {
   codigo: string;
   unidad?: string;
   observaciones?: string;
+  lote?: string;
+  fechaVencimiento?: string;
 }
 
 
