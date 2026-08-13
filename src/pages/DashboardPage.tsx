@@ -683,7 +683,23 @@ export default function DashboardPage() {
         </div>
 
         {/* equipos críticos */}
-        <Section title="Equipos con mayor intervención (Top 10)" subtitle="Identifica máquinas problemáticas">
+        <Section
+          title="Equipos con mayor intervención (Top 10)"
+          subtitle={`Identifica máquinas problemáticas${tipoEquipoFilter ? ` · Tipo: ${tipoEquipoFilter}` : ""}`}
+          action={
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Label className="text-xs whitespace-nowrap text-muted-foreground">Tipo de OIT</Label>
+              <div className="w-full sm:w-56">
+                <SearchSelect
+                  value={tipoEquipoFilter}
+                  onChange={setTipoEquipoFilter}
+                  options={tiposDinamicos.map((t) => ({ value: t, label: t }))}
+                  placeholder="Todos los tipos"
+                />
+              </div>
+            </div>
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-secondary">
@@ -691,7 +707,7 @@ export default function DashboardPage() {
                   <th key={h} className="text-left p-2 text-xs uppercase">{h}</th>)}</tr>
               </thead>
               <tbody>
-                {topEquipos.length === 0 && <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sin datos</td></tr>}
+                {topEquipos.length === 0 && <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">{tipoEquipoFilter ? "Sin datos para el tipo de OIT seleccionado" : "Sin datos"}</td></tr>}
                 {topEquipos.map((e, i) => (
                   <tr key={i} className="border-t border-border hover:bg-accent/30">
                     <td className="p-2 font-mono">{e.codigo || "—"}</td>
@@ -703,7 +719,17 @@ export default function DashboardPage() {
                     <td className="p-2">{e.ultima || "—"}</td>
                     <td className="p-2">
                       <Button size="sm" variant="ghost" className="gap-1"
-                        onClick={() => goResultados({ codigoEquipo: e.codigo, nombreEquipo: e.codigo ? "" : e.nombre })}>
+                        onClick={() => goResultados({
+                          codigoEquipo: e.codigo,
+                          nombreEquipo: e.codigo ? "" : e.nombre,
+                          ...(tipoEquipoFilter ? { tipoOrden: [tipoEquipoFilter] } : {}),
+                        })}>
+                        Ver <ChevronRight className="h-3 w-3" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+
                         Ver <ChevronRight className="h-3 w-3" />
                       </Button>
                     </td>
