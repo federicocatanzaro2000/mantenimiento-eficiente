@@ -13,6 +13,7 @@ import OrdenForm from "./pages/OrdenForm";
 import FiltrosPage from "./pages/FiltrosPage";
 import ResultadosPage from "./pages/ResultadosPage";
 import DashboardPage from "./pages/DashboardPage";
+import KpisPage from "./pages/KpisPage";
 import AdminUsuarios from "./pages/AdminUsuarios";
 
 import Catalogos from "./pages/Catalogos";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/filtros" element={<ProtectedRoute><FiltrosPage /></ProtectedRoute>} />
             <Route path="/resultados" element={<ProtectedRoute><ResultadosPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/kpis" element={<ProtectedRoute><KpisPage /></ProtectedRoute>} />
             
             <Route path="/preventivos" element={<ProtectedRoute><PreventivosPage /></ProtectedRoute>} />
             <Route path="/relevamientos" element={<ProtectedRoute><RelevamientosPage /></ProtectedRoute>} />
