@@ -151,6 +151,9 @@ export default function OrdenForm() {
           base.nombreEquipo = involEquipo;
         }
       }
+      // Prefill de tipo de orden (ej: /orden/nueva?tipo=EDILICIO)
+      const tipoPre = searchParams.get("tipo");
+      if (tipoPre) base.tipoOrden = tipoPre as Orden["tipoOrden"];
       setOrden(base);
     }
   }, [id, loaded, ordenes]); // eslint-disable-line
