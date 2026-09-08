@@ -18,6 +18,7 @@ import AdminUsuarios from "./pages/AdminUsuarios";
 
 import Catalogos from "./pages/Catalogos";
 import PreventivosPage from "./pages/PreventivosPage";
+import EdiliciosPage from "./pages/EdiliciosPage";
 import RelevamientosPage from "./pages/RelevamientosPage";
 import RelevamientoNuevo from "./pages/RelevamientoNuevo";
 import RelevamientoDetail from "./pages/RelevamientoDetail";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/kpis" element={<ProtectedRoute><KpisPage /></ProtectedRoute>} />
             
             <Route path="/preventivos" element={<ProtectedRoute><PreventivosPage /></ProtectedRoute>} />
+            <Route path="/edilicios" element={<ProtectedRoute><EdiliciosPage /></ProtectedRoute>} />
             <Route path="/relevamientos" element={<ProtectedRoute><RelevamientosPage /></ProtectedRoute>} />
             <Route path="/relevamientos/nuevo" element={<ProtectedRoute><RelevamientoNuevo /></ProtectedRoute>} />
             <Route path="/relevamientos/catalogo" element={<ProtectedRoute><RelevamientoCatalogo /></ProtectedRoute>} />

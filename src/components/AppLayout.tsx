@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Gauge, Users, LogOut, Settings, Wrench, ClipboardCheck } from "lucide-react";
+import { ClipboardList, FilePlus, Filter, Table2, BarChart3, Gauge, Users, LogOut, Settings, Wrench, ClipboardCheck, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo-incalfood.png";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { to: "/dashboard", label: "Dashboard", icon: BarChart3, show: true },
     { to: "/kpis", label: "KPIs", icon: Gauge, show: true },
     { to: "/preventivos", label: "Preventivos", icon: Wrench, show: true },
+    { to: "/edilicios", label: "Edilicios", icon: Building2, show: true },
     { to: "/relevamientos", label: "Relevamientos", icon: ClipboardCheck, show: true },
     { to: "/catalogos", label: "Catálogos", icon: Settings, show: canManageCatalogos(roles) },
     { to: "/usuarios", label: "Usuarios", icon: Users, show: isAdminUsuarios(roles) },
