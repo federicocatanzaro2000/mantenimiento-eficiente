@@ -476,7 +476,7 @@ export default function KpisPage() {
             title="Equipo con más intervenciones"
             value={<span className="text-xl">{kpi4.top ? kpi4.top.label : "Sin dato"}</span>}
             icon={Wrench}
-            sub={kpi4.top ? <>{kpi4.top.cant} correctivos · últimos {ventanaEquipos} días</> : <>Sin correctivos en la ventana</>}
+            sub={kpi4.top ? <>{kpi4.top.cant} correctivos en el período</> : <>Sin correctivos en el período</>}
             onClick={() => scrollTo("kpi4")}
           />
           <BigKpi
@@ -653,16 +653,7 @@ export default function KpisPage() {
         <Section
           id="kpi4"
           title="4 · Equipos con mayor intervención"
-          subtitle="Cantidad de OITs correctivas distintas por equipo."
-          action={
-            <div className="flex gap-1">
-              {([30, 90] as const).map((v) => (
-                <Button key={v} size="sm" variant={ventanaEquipos === v ? "default" : "outline"} className="h-8 text-xs" onClick={() => setVentanaEquipos(v)}>
-                  Últimos {v} días
-                </Button>
-              ))}
-            </div>
-          }
+          subtitle={`Cantidad de OITs correctivas distintas por equipo. Período: ${fmtDate(rango.desde)} — ${fmtDate(rango.hasta)}.`}
         >
           <div className="mb-4">
             <Bars
@@ -671,10 +662,9 @@ export default function KpisPage() {
                 label: r.label,
                 value: r.cant,
                 onClick: () => goResultados({
-                  fechaCreacionDesde: kpi4.desde, fechaCreacionHasta: hoy,
                   codigoEquipo: r.codigo || "", nombreEquipo: r.codigo ? "" : (r.label === "Sin dato" ? "" : r.label),
                   tipoOrden: ["Correctivo"],
-                }, false),
+                }),
               }))}
             />
           </div>
@@ -693,9 +683,8 @@ export default function KpisPage() {
                       <td className={`${td} tabular-nums`}>{r.horasParada.toLocaleString("es-AR", { maximumFractionDigits: 1 })}</td>
                       <td className={td}>
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => goResultados({
-                          fechaCreacionDesde: kpi4.desde, fechaCreacionHasta: hoy,
                           codigoEquipo: r.codigo || "", tipoOrden: ["Correctivo"],
-                        }, false)}>Ver OITs</Button>
+                        })}>Ver OITs</Button>
                       </td>
                     </tr>
                   ))}
