@@ -300,10 +300,40 @@ export default function KpisPage() {
       return p.scheduled_date >= hoy && st !== "Realizado" && st !== "Cancelado";
     }).length;
 
-    const denom = debidos.length;
-    const pct = denom > 0 ? Math.round((enTermino / denom) * 100) : null;
-    return { denom, enTermino, fueraTermino, vencidosPeriodo, vencidosRows, proximos, pct };
-  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, ordenById, rango.desde, rango.hasta, hoy]);
+    // OITs preventivas creadas por fuera del cronograma (sin item asociado):
+    // también son mantenimiento preventivo y deben contar en el cumplimiento.
+    const idsConItem = new Set(preventivos.map((p) => p.work_order_id).filter((v): v is string => !!v));
+    const fechaRefOIT = (o: Orden) => o.fechaLimiteRealizacion || o.fechaCreacion || "";
+    const sueltas = baseOrdenes.filter(
+      (o) => isPreventivo(o) && !idsConItem.has(o.id) && inRange(fechaRefOIT(o), rango.desde, rango.hasta),
+    );
+    const sueltasDebidas = sueltas.filter((o) => fechaRefOIT(o) <= hoy && o.estado !== "Cancelado");
+    let sueltasEnTermino = 0, sueltasFueraTermino = 0, sueltasVencidas = 0;
+    sueltasDebidas.forEach((o) => {
+      if (isClosed(o)) {
+        const lim = o.fechaLimiteRealizacion;
+        if (!lim || !o.fechaFinalizacion || o.fechaFinalizacion <= lim) sueltasEnTermino++;
+        else sueltasFueraTermino++;
+      } else {
+        sueltasVencidas++;
+      }
+    });
+    const sueltasProximas = sueltas.filter((o) => fechaRefOIT(o) >= hoy && !isClosed(o) && o.estado !== "Cancelado").length;
+
+    const denom = debidos.length + sueltasDebidas.length;
+    const totalEnTermino = enTermino + sueltasEnTermino;
+    const pct = denom > 0 ? Math.round((totalEnTermino / denom) * 100) : null;
+    return {
+      denom,
+      enTermino: totalEnTermino,
+      fueraTermino: fueraTermino + sueltasFueraTermino,
+      vencidosPeriodo: vencidosPeriodo + sueltasVencidas,
+      vencidosRows,
+      proximos: proximos + sueltasProximas,
+      pct,
+      sinCronograma: sueltasDebidas.length,
+    };
+  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, baseOrdenes, ordenById, rango.desde, rango.hasta, hoy]);
 
   // ───────── KPI 4: equipos con mayor intervención (mismo período global) ─────────
   const kpi4 = useMemo(() => {
