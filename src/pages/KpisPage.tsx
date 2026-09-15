@@ -314,6 +314,8 @@ export default function KpisPage() {
     rows.forEach((o) => {
       if (vistos.has(o.id)) return; // sin doble conteo
       vistos.add(o.id);
+      // Sólo OITs con equipo real: las sin equipo no son un equipo.
+      if (!o.codigoEquipo?.trim() && !o.nombreEquipo?.trim()) return;
       const k = equipoLabel(o);
       const cur = m.get(k) ?? { label: k, codigo: o.codigoEquipo ?? "", cant: 0, horasReales: 0, horasParada: 0 };
       cur.cant += 1;
