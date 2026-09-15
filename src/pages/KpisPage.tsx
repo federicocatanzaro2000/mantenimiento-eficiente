@@ -307,7 +307,7 @@ export default function KpisPage() {
     const sueltas = baseOrdenes.filter(
       (o) => isPreventivo(o) && !idsConItem.has(o.id) && inRange(fechaRefOIT(o), rango.desde, rango.hasta),
     );
-    const sueltasDebidas = sueltas.filter((o) => fechaRefOIT(o) <= hoy && o.estado !== "Cancelado");
+    const sueltasDebidas = sueltas.filter((o) => fechaRefOIT(o) <= hoy);
     let sueltasEnTermino = 0, sueltasFueraTermino = 0, sueltasVencidas = 0;
     sueltasDebidas.forEach((o) => {
       if (isClosed(o)) {
@@ -318,7 +318,7 @@ export default function KpisPage() {
         sueltasVencidas++;
       }
     });
-    const sueltasProximas = sueltas.filter((o) => fechaRefOIT(o) >= hoy && !isClosed(o) && o.estado !== "Cancelado").length;
+    const sueltasProximas = sueltas.filter((o) => fechaRefOIT(o) >= hoy && !isClosed(o)).length;
 
     const denom = debidos.length + sueltasDebidas.length;
     const totalEnTermino = enTermino + sueltasEnTermino;
