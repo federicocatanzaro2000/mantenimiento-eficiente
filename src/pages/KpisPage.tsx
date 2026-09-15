@@ -256,15 +256,16 @@ export default function KpisPage() {
   }, [periodoOrdenes]);
 
   // ───────── KPI 3: cumplimiento preventivo ─────────
+  // Base = MISMO universo que Filtros y Dashboard: OITs de tipo PREVENTIVO creadas en el período.
+  // El cronograma se usa sólo para aportar la fecha programada y para listar pendientes sin OIT.
   const kpi3 = useMemo(() => {
-    const base = preventivos.filter((p) => {
+    const itemsFiltrados = preventivos.filter((p) => {
       if (f.codigoEquipo && (p.equipment_code_snapshot ?? "").toLowerCase() !== f.codigoEquipo.toLowerCase()) return false;
       if (f.tecnico) {
         const nombre = p.responsible_id ? peopleById.get(p.responsible_id) ?? "" : "";
         if (!nombre.toLowerCase().includes(f.tecnico.toLowerCase())) return false;
       }
       if (f.sector) {
-        // El preventivo no tiene sector propio: se infiere por el equipo cargado en OITs de ese sector.
         const code = (p.equipment_code_snapshot ?? "").toLowerCase();
         if (!code) return false;
         const match = ordenes.some((o) => (o.codigoEquipo ?? "").toLowerCase() === code && o.sector === f.sector);
@@ -273,67 +274,59 @@ export default function KpisPage() {
       return true;
     });
 
-    const enPeriodo = base.filter((p) => inRange(p.scheduled_date, rango.desde, rango.hasta));
-    // Denominador: sólo lo que ya correspondía ejecutarse (no futuros) y no cancelados.
-    const debidos = enPeriodo.filter((p) => p.scheduled_date <= hoy && effectiveStatus(p, hoy) !== "Cancelado");
+    // Mapa OIT -> item de cronograma (para obtener la fecha programada real).
+    const itemPorOIT = new Map<string, PreventiveItem>();
+    itemsFiltrados.forEach((p) => { if (p.work_order_id) itemPorOIT.set(p.work_order_id, p); });
 
-    const fechaRealizacion = (p: PreventiveItem): string | null => {
-      const o = p.work_order_id ? ordenById.get(p.work_order_id) : undefined;
-      if (o?.fechaFinalizacion) return o.fechaFinalizacion;
-      return p.updated_at ? p.updated_at.slice(0, 10) : null;
-    };
+    // Universo: OITs preventivas del período (misma fecha de referencia que Dashboard/Filtros).
+    const oitsPrev = periodoOrdenes.filter((o) => isPreventivo(o));
+    const fechaObjetivo = (o: Orden) =>
+      itemPorOIT.get(o.id)?.scheduled_date || o.fechaLimiteRealizacion || o.fechaCreacion || "";
 
-    let enTermino = 0, fueraTermino = 0;
-    debidos.forEach((p) => {
-      if (effectiveStatus(p, hoy) !== "Realizado") return;
-      const fr = fechaRealizacion(p);
-      if (fr && fr <= p.scheduled_date) enTermino++; else fueraTermino++;
+    const debidas = oitsPrev.filter((o) => {
+      const fo = fechaObjetivo(o);
+      return !fo || fo <= hoy;
     });
 
-    const vencidosRows = base
+    let enTermino = 0, fueraTermino = 0, vencidas = 0;
+    debidas.forEach((o) => {
+      const fo = fechaObjetivo(o);
+      if (isClosed(o)) {
+        if (!fo || !o.fechaFinalizacion || o.fechaFinalizacion <= fo) enTermino++;
+        else fueraTermino++;
+      } else {
+        vencidas++;
+      }
+    });
+    const proximos = oitsPrev.filter((o) => {
+      const fo = fechaObjetivo(o);
+      return !!fo && fo > hoy && !isClosed(o);
+    }).length;
+
+    // Pendientes de cronograma que todavía no generaron OIT (informativo, no entra en la base).
+    const sinOIT = itemsFiltrados.filter(
+      (p) => !p.work_order_id && inRange(p.scheduled_date, rango.desde, rango.hasta) && effectiveStatus(p, hoy) !== "Cancelado",
+    );
+
+    const vencidosRows = itemsFiltrados
       .filter((p) => effectiveStatus(p, hoy) === "Vencido")
       .map((p) => ({ p, dias: -daysBetweenISO(p.scheduled_date, hoy) }))
       .sort((a, b) => b.dias - a.dias);
-    const vencidosPeriodo = debidos.filter((p) => effectiveStatus(p, hoy) === "Vencido").length;
-    const proximos = base.filter((p) => {
-      const st = effectiveStatus(p, hoy);
-      return p.scheduled_date >= hoy && st !== "Realizado" && st !== "Cancelado";
-    }).length;
 
-    // OITs preventivas creadas por fuera del cronograma (sin item asociado):
-    // también son mantenimiento preventivo y deben contar en el cumplimiento.
-    const idsConItem = new Set(preventivos.map((p) => p.work_order_id).filter((v): v is string => !!v));
-    const fechaRefOIT = (o: Orden) => o.fechaLimiteRealizacion || o.fechaCreacion || "";
-    const sueltas = baseOrdenes.filter(
-      (o) => isPreventivo(o) && !idsConItem.has(o.id) && inRange(fechaRefOIT(o), rango.desde, rango.hasta),
-    );
-    const sueltasDebidas = sueltas.filter((o) => fechaRefOIT(o) <= hoy);
-    let sueltasEnTermino = 0, sueltasFueraTermino = 0, sueltasVencidas = 0;
-    sueltasDebidas.forEach((o) => {
-      if (isClosed(o)) {
-        const lim = o.fechaLimiteRealizacion;
-        if (!lim || !o.fechaFinalizacion || o.fechaFinalizacion <= lim) sueltasEnTermino++;
-        else sueltasFueraTermino++;
-      } else {
-        sueltasVencidas++;
-      }
-    });
-    const sueltasProximas = sueltas.filter((o) => fechaRefOIT(o) >= hoy && !isClosed(o)).length;
-
-    const denom = debidos.length + sueltasDebidas.length;
-    const totalEnTermino = enTermino + sueltasEnTermino;
-    const pct = denom > 0 ? Math.round((totalEnTermino / denom) * 100) : null;
+    const denom = debidas.length;
+    const pct = denom > 0 ? Math.round((enTermino / denom) * 100) : null;
     return {
       denom,
-      enTermino: totalEnTermino,
-      fueraTermino: fueraTermino + sueltasFueraTermino,
-      vencidosPeriodo: vencidosPeriodo + sueltasVencidas,
+      enTermino,
+      fueraTermino,
+      vencidosPeriodo: vencidas,
       vencidosRows,
-      proximos: proximos + sueltasProximas,
+      proximos,
       pct,
-      sinCronograma: sueltasDebidas.length,
+      sinCronograma: sinOIT.length,
     };
-  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, baseOrdenes, ordenById, rango.desde, rango.hasta, hoy]);
+  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, periodoOrdenes, rango.desde, rango.hasta, hoy]);
+
 
   // ───────── KPI 4: equipos con mayor intervención (mismo período global) ─────────
   const kpi4 = useMemo(() => {
@@ -611,7 +604,8 @@ export default function KpisPage() {
         <Section
           id="kpi3"
           title="3 · Cumplimiento de mantenimiento preventivo"
-          subtitle="Preventivos que correspondía ejecutar en el período: cronograma + OITs preventivas cargadas por fuera del cronograma (no incluye futuros)."
+          subtitle="Base: OITs de tipo PREVENTIVO del período (mismo criterio que Filtros y Dashboard). No incluye futuros."
+
           action={<Button size="sm" variant="outline" onClick={() => navigate("/preventivos")}>Ir a Preventivos</Button>}
         >
           {prevError ? (
@@ -634,7 +628,7 @@ export default function KpisPage() {
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-semibold">Cumplimiento</span>
-                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} preventivos{kpi3.sinCronograma > 0 ? ` (incluye ${kpi3.sinCronograma} OITs fuera del cronograma)` : ""}</span>
+                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} OITs preventivas{kpi3.sinCronograma > 0 ? ` · ${kpi3.sinCronograma} del cronograma aún sin OIT` : ""}</span>
                 </div>
                 <div className="h-3 bg-secondary rounded overflow-hidden">
                   <div
