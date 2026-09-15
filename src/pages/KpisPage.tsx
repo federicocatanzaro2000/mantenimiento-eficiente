@@ -634,7 +634,7 @@ export default function KpisPage() {
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-semibold">Cumplimiento</span>
-                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} preventivos</span>
+                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} preventivos{kpi3.sinCronograma > 0 ? ` (incluye ${kpi3.sinCronograma} OITs fuera del cronograma)` : ""}</span>
                 </div>
                 <div className="h-3 bg-secondary rounded overflow-hidden">
                   <div
