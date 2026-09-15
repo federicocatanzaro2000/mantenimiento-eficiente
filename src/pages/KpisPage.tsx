@@ -45,6 +45,7 @@ const tecnicosDe = (o: Orden) =>
     : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
 
 const isCorrectivo = (o: Orden) => String(o.tipoOrden ?? "").toLowerCase().includes("correctiv");
+const isPreventivo = (o: Orden) => String(o.tipoOrden ?? "").toLowerCase().includes("preventiv");
 const isClosed = (o: Orden) => o.estado === "Cumplido";
 const isOpen = (o: Orden) => o.estado === "Pendiente" || o.estado === "En proceso";
 const equipoLabel = (o: Orden) => {
@@ -299,10 +300,40 @@ export default function KpisPage() {
       return p.scheduled_date >= hoy && st !== "Realizado" && st !== "Cancelado";
     }).length;
 
-    const denom = debidos.length;
-    const pct = denom > 0 ? Math.round((enTermino / denom) * 100) : null;
-    return { denom, enTermino, fueraTermino, vencidosPeriodo, vencidosRows, proximos, pct };
-  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, ordenById, rango.desde, rango.hasta, hoy]);
+    // OITs preventivas creadas por fuera del cronograma (sin item asociado):
+    // también son mantenimiento preventivo y deben contar en el cumplimiento.
+    const idsConItem = new Set(preventivos.map((p) => p.work_order_id).filter((v): v is string => !!v));
+    const fechaRefOIT = (o: Orden) => o.fechaLimiteRealizacion || o.fechaCreacion || "";
+    const sueltas = baseOrdenes.filter(
+      (o) => isPreventivo(o) && !idsConItem.has(o.id) && inRange(fechaRefOIT(o), rango.desde, rango.hasta),
+    );
+    const sueltasDebidas = sueltas.filter((o) => fechaRefOIT(o) <= hoy);
+    let sueltasEnTermino = 0, sueltasFueraTermino = 0, sueltasVencidas = 0;
+    sueltasDebidas.forEach((o) => {
+      if (isClosed(o)) {
+        const lim = o.fechaLimiteRealizacion;
+        if (!lim || !o.fechaFinalizacion || o.fechaFinalizacion <= lim) sueltasEnTermino++;
+        else sueltasFueraTermino++;
+      } else {
+        sueltasVencidas++;
+      }
+    });
+    const sueltasProximas = sueltas.filter((o) => fechaRefOIT(o) >= hoy && !isClosed(o)).length;
+
+    const denom = debidos.length + sueltasDebidas.length;
+    const totalEnTermino = enTermino + sueltasEnTermino;
+    const pct = denom > 0 ? Math.round((totalEnTermino / denom) * 100) : null;
+    return {
+      denom,
+      enTermino: totalEnTermino,
+      fueraTermino: fueraTermino + sueltasFueraTermino,
+      vencidosPeriodo: vencidosPeriodo + sueltasVencidas,
+      vencidosRows,
+      proximos: proximos + sueltasProximas,
+      pct,
+      sinCronograma: sueltasDebidas.length,
+    };
+  }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, baseOrdenes, ordenById, rango.desde, rango.hasta, hoy]);
 
   // ───────── KPI 4: equipos con mayor intervención (mismo período global) ─────────
   const kpi4 = useMemo(() => {
@@ -580,7 +611,7 @@ export default function KpisPage() {
         <Section
           id="kpi3"
           title="3 · Cumplimiento de mantenimiento preventivo"
-          subtitle="Preventivos que correspondía ejecutar en el período (no incluye futuros)."
+          subtitle="Preventivos que correspondía ejecutar en el período: cronograma + OITs preventivas cargadas por fuera del cronograma (no incluye futuros)."
           action={<Button size="sm" variant="outline" onClick={() => navigate("/preventivos")}>Ir a Preventivos</Button>}
         >
           {prevError ? (
@@ -603,7 +634,7 @@ export default function KpisPage() {
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-semibold">Cumplimiento</span>
-                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} preventivos</span>
+                  <span className="tabular-nums font-semibold">{kpi3.pct === null ? "Sin dato" : `${kpi3.pct}%`} · base {kpi3.denom} preventivos{kpi3.sinCronograma > 0 ? ` (incluye ${kpi3.sinCronograma} OITs fuera del cronograma)` : ""}</span>
                 </div>
                 <div className="h-3 bg-secondary rounded overflow-hidden">
                   <div
