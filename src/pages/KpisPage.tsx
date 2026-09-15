@@ -45,6 +45,7 @@ const tecnicosDe = (o: Orden) =>
     : (o.tecnicoResponsable ? [o.tecnicoResponsable] : []);
 
 const isCorrectivo = (o: Orden) => String(o.tipoOrden ?? "").toLowerCase().includes("correctiv");
+const isPreventivo = (o: Orden) => String(o.tipoOrden ?? "").toLowerCase().includes("preventiv");
 const isClosed = (o: Orden) => o.estado === "Cumplido";
 const isOpen = (o: Orden) => o.estado === "Pendiente" || o.estado === "En proceso";
 const equipoLabel = (o: Orden) => {
