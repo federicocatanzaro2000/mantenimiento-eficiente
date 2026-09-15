@@ -176,7 +176,6 @@ export default function KpisPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [f, setFs] = useState<KFilters>(emptyFilters);
-  const [ventanaEquipos, setVentanaEquipos] = useState<30 | 90>(30);
   const set = <K extends keyof KFilters>(k: K, v: KFilters[K]) => setFs((p) => ({ ...p, [k]: v }));
 
   const load = async () => {
@@ -305,10 +304,9 @@ export default function KpisPage() {
     return { denom, enTermino, fueraTermino, vencidosPeriodo, vencidosRows, proximos, pct };
   }, [preventivos, f.codigoEquipo, f.tecnico, f.sector, peopleById, ordenes, ordenById, rango.desde, rango.hasta, hoy]);
 
-  // ───────── KPI 4: equipos con mayor intervención (ventana propia) ─────────
+  // ───────── KPI 4: equipos con mayor intervención (mismo período global) ─────────
   const kpi4 = useMemo(() => {
-    const desde = addDaysISO(hoy, -ventanaEquipos);
-    const rows = baseOrdenes.filter((o) => isCorrectivo(o) && inRange(o.fechaCreacion, desde, hoy));
+    const rows = periodoOrdenes.filter((o) => isCorrectivo(o));
     const m = new Map<string, { label: string; codigo: string; cant: number; horasReales: number; horasParada: number }>();
     const vistos = new Set<string>();
     rows.forEach((o) => {
@@ -324,8 +322,8 @@ export default function KpisPage() {
       m.set(k, cur);
     });
     const ranking = Array.from(m.values()).sort((a, b) => b.cant - a.cant).slice(0, 10);
-    return { desde, ranking, top: ranking[0] ?? null };
-  }, [baseOrdenes, ventanaEquipos, hoy]);
+    return { ranking, top: ranking[0] ?? null };
+  }, [periodoOrdenes]);
 
   // ───────── KPI 5: horas presupuestadas vs. reales ─────────
   const kpi5 = useMemo(() => {
