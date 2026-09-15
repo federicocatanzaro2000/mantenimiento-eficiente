@@ -604,7 +604,8 @@ export default function KpisPage() {
         <Section
           id="kpi3"
           title="3 · Cumplimiento de mantenimiento preventivo"
-          subtitle="Preventivos que correspondía ejecutar en el período: cronograma + OITs preventivas cargadas por fuera del cronograma (no incluye futuros)."
+          subtitle="Base: OITs de tipo PREVENTIVO del período (mismo criterio que Filtros y Dashboard). No incluye futuros."
+
           action={<Button size="sm" variant="outline" onClick={() => navigate("/preventivos")}>Ir a Preventivos</Button>}
         >
           {prevError ? (
