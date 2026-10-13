@@ -480,7 +480,7 @@ export default function FiltrosPage() {
             <SearchSelect value={local.elaboro} onChange={(v) => set("elaboro", v)} options={optElaboro} placeholder="Seleccionar quién elaboró..." />
           </F>
           <F label="Revisó">
-            <SearchSelect value={local.reviso} onChange={(v) => set("reviso", v)} options={optReviso} placeholder="Seleccionar quién revisó..." />
+            <SearchSelect value={local.reviso} onChange={(v) => set("reviso", v)} options={[{ value: "__VACIO__", label: "Vacío" }, ...optReviso]} placeholder="Seleccionar quién revisó..." />
           </F>
           <F label="Aprobó">
             <SearchSelect value={local.aprobo} onChange={(v) => set("aprobo", v)} options={optAprobo} placeholder="Seleccionar quién aprobó..." />
