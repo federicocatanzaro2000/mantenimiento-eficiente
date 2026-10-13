@@ -363,8 +363,11 @@ export default function DashboardPage() {
     const cc = filtered.filter((o) => o.controlLiberacionCalidad).length;
     const noApto = filtered.filter((o) => o.estadoRecepcionEquipo === "NO APTO").length;
     const sinResp = filtered.filter((o) => !o.responsableControlCalidad?.trim()).length;
-    const sinFlujo = filtered.filter((o) => !o.elaboro || !o.reviso || !o.aprobo).length;
-    return { t, aprob, cc, noApto, sinResp, sinFlujo };
+    const vacio = (v?: string | null) => !(v ?? "").trim();
+    const sinReviso = filtered.filter((o) => vacio(o.reviso)).length;
+    const sinAprobo = filtered.filter((o) => vacio(o.aprobo)).length;
+    const sinElaboro = filtered.filter((o) => vacio(o.elaboro)).length;
+    return { t, aprob, cc, noApto, sinResp, sinReviso, sinAprobo, sinElaboro };
   }, [filtered]);
 
   // calidad de datos
@@ -848,13 +851,15 @@ export default function DashboardPage() {
 
         {/* calidad */}
         <Section title="Calidad y aprobaciones">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <Kpi title="Aprobadas" value={calidad.aprob} sub={`${pct(calidad.aprob, calidad.t)}%`} tone="success" />
             <Kpi title="No aprobadas" value={calidad.t - calidad.aprob} sub={`${pct(calidad.t - calidad.aprob, calidad.t)}%`} tone="warning" />
             <Kpi title="Con control calidad" value={calidad.cc} sub={`${pct(calidad.cc, calidad.t)}%`} tone="info" />
             <Kpi title="Recepción NO APTO" value={calidad.noApto} tone={calidad.noApto > 0 ? "danger" : "default"} />
             <Kpi title="Sin responsable calidad" value={calidad.sinResp} tone="warning" />
-            <Kpi title="Sin elaboró/revisó/aprobó" value={calidad.sinFlujo} tone="warning" />
+            <Kpi title="Sin revisó" value={calidad.sinReviso} tone="warning" />
+            <Kpi title="Sin aprobó" value={calidad.sinAprobo} tone="warning" />
+            <Kpi title="Sin elaboró" value={calidad.sinElaboro} tone="warning" />
           </div>
         </Section>
 
