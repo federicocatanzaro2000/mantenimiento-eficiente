@@ -313,8 +313,9 @@ export default function KpisPage() {
       .map((p) => ({ p, dias: -daysBetweenISO(p.scheduled_date, hoy) }))
       .sort((a, b) => b.dias - a.dias);
 
-    const denom = debidas.length;
-    const pct = denom > 0 ? Math.round((enTermino / denom) * 100) : null;
+    const denom = enTermino + fueraTermino + vencidas;
+    const raw = calcularCumplimientoPreventivo(enTermino, fueraTermino, vencidas);
+    const pct = raw === null ? null : Math.round(raw);
     return {
       denom,
       enTermino,
