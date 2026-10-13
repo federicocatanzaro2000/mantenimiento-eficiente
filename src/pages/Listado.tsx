@@ -29,7 +29,8 @@ export default function Listado() {
   useEffect(() => { if (!loaded) loadAll(); }, [loaded, loadAll]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const norm = (v: unknown) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = norm(search.trim());
     const list = !q ? ordenes : ordenes.filter((o) => {
       const aprobadoTxt = o.aprobado ? "aprobado" : "no aprobado";
       const materialesTxt = (o.materialesUtilizados ?? [])
@@ -62,8 +63,9 @@ export default function Listado() {
         o.aprobo,
         o.observaciones,
         o.estadoRecepcionEquipo,
+        o.comentarioCalidad,
         materialesTxt,
-      ].some((v) => String(v ?? "").toLowerCase().includes(q));
+      ].some((v) => norm(v).includes(q));
     });
     const sorted = [...list].sort((a, b) => {
       const av = sortKey === "aprobadoLabel" ? (a.aprobado ? 1 : 0) : (a as any)[sortKey];
@@ -132,6 +134,7 @@ export default function Listado() {
                 <Th k="codigoEquipo">Código Equipo</Th>
                 <Th k="sector">Sector</Th>
                 <Th k="tipoOrden">Tipo</Th>
+                <Th k="comentarioCalidad">Comentario</Th>
                 <Th k="estado">Estado</Th>
                 <Th k="tecnicoResponsable">Técnico</Th>
                 <Th k="prioridad">Prioridad</Th>
@@ -142,9 +145,9 @@ export default function Listado() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={13} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>}
+              {loading && <tr><td colSpan={14} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={13} className="text-center py-8 text-muted-foreground">Sin resultados</td></tr>
+                <tr><td colSpan={14} className="text-center py-8 text-muted-foreground">Sin resultados</td></tr>
               )}
               {filtered.map((o) => (
                 <tr key={o.id} className="cursor-pointer" onClick={() => navigate(`/orden/${o.id}`)}>
@@ -158,6 +161,11 @@ export default function Listado() {
                       : "")}</td>
                   <td>{o.sector}</td>
                   <td>{o.tipoOrden}</td>
+                  <td className="max-w-[220px]">
+                    {o.comentarioCalidad?.trim()
+                      ? <span className="block truncate" title={o.comentarioCalidad}>{o.comentarioCalidad}</span>
+                      : <span className="text-muted-foreground">-</span>}
+                  </td>
                   <td><EstadoBadge estado={o.estado} /></td>
                   <td>
                     {((o.tecnicosResponsables && o.tecnicosResponsables.length > 0)
