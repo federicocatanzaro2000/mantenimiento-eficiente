@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { calcularCumplimientoPreventivo } from "@/lib/kpis/cumplimiento";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { useOrdenesStore } from "@/store/ordenesStore";
